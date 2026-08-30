@@ -1,17 +1,34 @@
-# Openstage
+# 🎶 Openstage
 
-Openstage is a community-curated index of remarkable live concert recordings and setlists. The site is a static Vite application: there is no database, account system, or backend service.
+> A community-curated index of remarkable live concert recordings and setlists.
 
-## Development
+[**Watch on Openstage →**](https://equiferus.github.io/openstage/)
 
-Use Node 24 and npm.
+Openstage brings full live performances, event details, and setlists together in a focused single-page experience. Watch recordings without leaving the site, search the collection, or follow the link back to the original source.
+
+## ✨ Highlights
+
+- Embedded concert recordings with scrollable setlists
+- Artist and concert search, plus curated recommendations
+- Shareable concert links
+- Fully static: no accounts, database, or backend
+
+## 🎟️ Suggest a concert
+
+Found a performance that belongs here? Select **Suggest a recording** on the [website](https://equiferus.github.io/openstage/), then provide the artist, recording URL, event details, and setlist if available. This creates a structured GitHub suggestion for review.
+
+Prefer to contribute the change yourself? Fork the repository, add the artist or concert to the appropriate `data.ts` file under `src/domain/artists`, run the checks below, and open a pull request.
+
+## 🛠️ Local development
+
+Requires Node.js 22.12+ and npm.
 
 ```sh
 npm install
 npm run dev
 ```
 
-Quality checks:
+Before opening a PR:
 
 ```sh
 npm run lint
@@ -19,23 +36,10 @@ npm test
 npm run build
 ```
 
-The local Vite URL includes the GitHub Pages base path: `http://localhost:5173/openstage/`.
+## 🧩 Built with
 
-## Project structure
+React, TypeScript, Vite, Tailwind CSS, shadcn-style UI primitives, TanStack Table, and Vitest. GitHub Actions deploys `main` to GitHub Pages.
 
-- `src/routes` contains the Vite entry point and the single-page concert URL state.
-- `src/lib/ui` contains all page, feature, and shadcn-style UI components and styles.
-- `src/lib` contains non-visual formatting and video URL utilities.
-- `src/domain/artists` and `src/domain/artists/concerts` each separate types, curated data, and function-based APIs.
+---
 
-Concerts can be shared with `#/?concert=<concert-id>`. Legacy Browse and artist hashes are normalized to the single-page concert view.
-
-To add or correct an artist or concert, update the relevant `data.ts`. Keep UI code dependent on the query functions exported from `api.ts`, not on the data modules directly.
-
-## Deployment
-
-The production base path is `/openstage/`. The Pages workflow tests and builds pull requests, then deploys `main` to `https://equiferus.github.io/openstage/`.
-
-Before the first deployment, open the repository's **Settings → Pages** and select **GitHub Actions** as the source. Future pushes to `main` deploy automatically.
-
-Community suggestions use the recording issue form in `.github/ISSUE_TEMPLATE`.
+Made for people who believe a great live set deserves to be easy to find. 💛
