@@ -1,0 +1,44 @@
+name: Recording suggestion
+description: Suggest a remarkable live performance for the Openstage collection.
+title: "[Recording]: "
+labels:
+  - curation
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping build Openstage. Please share the best available original source and as much event context as you can.
+  - type: input
+    id: artist
+    attributes:
+      label: Artist
+      placeholder: Artist or group name
+    validations:
+      required: true
+  - type: input
+    id: recording
+    attributes:
+      label: Recording URL
+      description: YouTube, Vimeo, or another publicly accessible source.
+      placeholder: https://...
+    validations:
+      required: true
+  - type: input
+    id: event
+    attributes:
+      label: Event and date
+      placeholder: Event name — YYYY-MM-DD
+  - type: input
+    id: venue
+    attributes:
+      label: Venue and location
+      placeholder: Venue — City, Region, Country
+  - type: textarea
+    id: setlist
+    attributes:
+      label: Setlist or setlist source
+      description: Include timestamps when they are available.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Why it belongs on Openstage
+      placeholder: Tell us what makes this recording exceptional.
