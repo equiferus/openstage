@@ -1,40 +1,101 @@
 import { useEffect, useState } from "react"
 
+import { getArtistBySlug } from "@/domain/artists/api"
+import type { Concert } from "@/domain/artists/concerts/api"
+import { getConcertById, getFeaturedConcert, getPrimaryConcertByArtistId } from "@/domain/artists/concerts/api"
 import { SiteShell } from "@/lib/ui/site-shell"
-import { ArtistRoute } from "@/routes/artist"
 import { HomeRoute } from "@/routes/home"
-import { NotFoundRoute } from "@/routes/not-found"
 
-function currentPath(): string {
-  const hash = window.location.hash.replace(/^#/, "")
-  return (hash || "/").split("?")[0].replace(/\/+$/, "") || "/"
+interface HashResolution {
+  concert: Concert
+  normalizedHash?: string
 }
 
-function useHashPath(): string {
-  const [path, setPath] = useState(currentPath)
+function concertHash(concert: Concert): string {
+  return `#/?concert=${encodeURIComponent(concert.id)}`
+}
 
-  useEffect(() => {
-    const onHashChange = () => setPath(currentPath())
-    window.addEventListener("hashchange", onHashChange)
-    return () => window.removeEventListener("hashchange", onHashChange)
-  }, [])
+function resolveHash(hash = window.location.hash): HashResolution {
+  const featuredConcert = getFeaturedConcert()
+  const hashValue = hash.replace(/^#/, "") || "/"
+  const [rawPath, rawQuery = ""] = hashValue.split("?", 2)
+  const path = rawPath.replace(/\/+$/, "") || "/"
 
-  return path
+  if (path === "/browse") {
+    return { concert: featuredConcert, normalizedHash: "#/" }
+  }
+
+  const artistMatch = path.match(/^\/artists\/([^/]+)$/)
+  if (artistMatch) {
+    let artistSlug = artistMatch[1]
+    try {
+      artistSlug = decodeURIComponent(artistSlug)
+    } catch {
+      return { concert: featuredConcert, normalizedHash: "#/" }
+    }
+
+    const artist = getArtistBySlug(artistSlug)
+    const concert = artist ? getPrimaryConcertByArtistId(artist.id) : undefined
+    return concert
+      ? { concert, normalizedHash: concertHash(concert) }
+      : { concert: featuredConcert, normalizedHash: "#/" }
+  }
+
+  if (path !== "/") {
+    return { concert: featuredConcert, normalizedHash: "#/" }
+  }
+
+  const concertId = new URLSearchParams(rawQuery).get("concert")
+  if (!concertId) {
+    return { concert: featuredConcert }
+  }
+
+  const concert = getConcertById(concertId)
+  return concert
+    ? { concert }
+    : { concert: featuredConcert, normalizedHash: "#/" }
 }
 
 export function Routes() {
-  const path = useHashPath()
-  const artistMatch = path.match(/^\/artists\/([^/]+)$/)
+  const [selectedConcertId, setSelectedConcertId] = useState(() => resolveHash().concert.id)
+  const selectedConcert = getConcertById(selectedConcertId) ?? getFeaturedConcert()
 
-  let route = <NotFoundRoute />
+  useEffect(() => {
+    function syncFromLocation() {
+      const resolution = resolveHash()
+      setSelectedConcertId(resolution.concert.id)
 
-  if (path === "/") {
-    route = <HomeRoute />
-  } else if (path === "/browse") {
-    route = <HomeRoute browse />
-  } else if (artistMatch) {
-    route = <ArtistRoute slug={decodeURIComponent(artistMatch[1])} />
+      if (resolution.normalizedHash && window.location.hash !== resolution.normalizedHash) {
+        window.history.replaceState(null, "", resolution.normalizedHash)
+      }
+    }
+
+    syncFromLocation()
+    window.addEventListener("hashchange", syncFromLocation)
+    window.addEventListener("popstate", syncFromLocation)
+
+    return () => {
+      window.removeEventListener("hashchange", syncFromLocation)
+      window.removeEventListener("popstate", syncFromLocation)
+    }
+  }, [])
+
+  function selectConcert(concert: Concert) {
+    setSelectedConcertId(concert.id)
+
+    const nextHash = concertHash(concert)
+    if (window.location.hash !== nextHash) {
+      window.history.pushState(null, "", nextHash)
+    }
+
+    window.requestAnimationFrame(() => {
+      document.getElementById("concert-player")?.scrollIntoView({ behavior: "smooth", block: "center" })
+    })
   }
 
-  return <SiteShell>{route}</SiteShell>
+  return (
+    <SiteShell onSelectConcert={selectConcert}>
+      <HomeRoute key={selectedConcert.id} concert={selectedConcert} onSelectConcert={selectConcert} />
+    </SiteShell>
+  )
 }

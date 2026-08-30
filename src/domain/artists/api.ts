@@ -7,6 +7,10 @@ export function listArtists(): readonly Artist[] {
   return artists
 }
 
+export function getArtistById(id: Artist["id"]): Artist | undefined {
+  return artists.find((artist) => artist.id === id)
+}
+
 export function getArtistBySlug(slug: string): Artist | undefined {
   return artists.find((artist) => artist.slug === slug)
 }

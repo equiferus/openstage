@@ -1,13 +1,16 @@
 import type { ReactNode } from "react"
 import { Code2, Menu, Play, Plus } from "lucide-react"
 
+import type { Concert } from "@/domain/artists/concerts/api"
 import { Button } from "@/lib/ui/primitives/button"
+import { SearchDrawer } from "@/lib/ui/search-drawer"
 
 const suggestionUrl =
   "https://github.com/equiferus/openstage/issues/new?template=recording-suggestion.yml"
 
 interface SiteShellProps {
   children: ReactNode
+  onSelectConcert: (concert: Concert) => void
 }
 
 export function Wordmark() {
@@ -21,29 +24,29 @@ export function Wordmark() {
   )
 }
 
-export function SiteShell({ children }: SiteShellProps) {
+export function SiteShell({ children, onSelectConcert }: SiteShellProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 border-b border-white/8 bg-zinc-950/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <a href="#/" className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-amber-400" aria-label="Openstage home">
+          <a
+            href="#/"
+            className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+            aria-label="Openstage home"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          >
             <Wordmark />
           </a>
-          <nav className="hidden items-center gap-1 sm:flex" aria-label="Primary navigation">
-            <Button variant="ghost" asChild>
-              <a href="#/">Home</a>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <SearchDrawer onSelectConcert={onSelectConcert} />
+            <Button variant="outline" size="sm" asChild>
+              <a href={suggestionUrl} target="_blank" rel="noreferrer">
+                <Plus aria-hidden="true" />
+                <span className="hidden xs:inline">Suggest a recording</span>
+                <span className="xs:hidden">Suggest</span>
+              </a>
             </Button>
-            <Button variant="ghost" asChild>
-              <a href="#/browse">Browse</a>
-            </Button>
-          </nav>
-          <Button variant="outline" size="sm" asChild>
-            <a href={suggestionUrl} target="_blank" rel="noreferrer">
-              <Plus aria-hidden="true" />
-              <span className="hidden xs:inline">Suggest a recording</span>
-              <span className="xs:hidden">Suggest</span>
-            </a>
-          </Button>
+          </div>
         </div>
       </header>
 

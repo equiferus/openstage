@@ -1,137 +1,142 @@
-import { ArrowRight, ExternalLink, Headphones, MapPin, VolumeX } from "lucide-react"
+import { useRef, useState } from "react"
+import { ExternalLink, MapPin, VolumeX } from "lucide-react"
 
-import type { Artist } from "@/domain/artists/api"
-import { getArtistBySlug, listArtists } from "@/domain/artists/api"
-import type { Concert } from "@/domain/artists/concerts/api"
-import { getConcertsByArtistId, getFeaturedConcert } from "@/domain/artists/concerts/api"
-import { getVenueLabel } from "@/lib/concert"
-import { getYouTubeThumbnailUrl } from "@/lib/youtube"
+import { getArtistById } from "@/domain/artists/api"
+import type { Concert, SetlistEntry } from "@/domain/artists/concerts/api"
+import { listConcertSuggestions, listOtherConcertsByArtistId } from "@/domain/artists/concerts/api"
+import { getYouTubeUrlAtTime } from "@/lib/youtube"
 import { Badge } from "@/lib/ui/primitives/badge"
 import { Button } from "@/lib/ui/primitives/button"
-import { Card } from "@/lib/ui/primitives/card"
+import { ConcertCarousel } from "@/lib/ui/concert-carousel"
 import { ConcertMeta } from "@/lib/ui/concert-meta"
+import { Setlist } from "@/lib/ui/setlist"
 import { VideoPlayer } from "@/lib/ui/video-player"
 
-function ArtistCard({ artist, concerts, rank }: { artist: Artist; concerts: readonly Concert[]; rank: number }) {
-  const primaryConcert = concerts.find((concert) => concert.featured) ?? concerts[0]
-  const thumbnail =
-    primaryConcert.source.platform === "youtube"
-      ? getYouTubeThumbnailUrl(primaryConcert.source.videoId)
-      : primaryConcert.source.thumbnailUrl
-
-  return (
-    <a
-      href={`#/artists/${artist.slug}`}
-      className="group block rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-4 focus-visible:ring-offset-zinc-950"
-      aria-label={`View ${artist.name} recordings`}
-    >
-      <Card className="h-full overflow-hidden transition duration-300 group-hover:-translate-y-1 group-hover:border-amber-300/30 group-hover:bg-zinc-900">
-        <div className="relative aspect-[16/10] overflow-hidden bg-zinc-900">
-          {thumbnail ? (
-            <img
-              className="size-full object-cover transition duration-500 group-hover:scale-[1.03]"
-              src={thumbnail}
-              alt=""
-              loading="lazy"
-            />
-          ) : null}
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
-          <span className="absolute top-4 left-4 flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/50 text-xs font-bold text-white backdrop-blur">
-            {String(rank).padStart(2, "0")}
-          </span>
-          <span className="absolute right-4 bottom-4 rounded-full border border-white/15 bg-black/50 px-3 py-1 text-xs font-medium text-zinc-200 backdrop-blur">
-            {concerts.length} {concerts.length === 1 ? "recording" : "recordings"}
-          </span>
-        </div>
-        <div className="p-5 sm:p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-xl font-semibold tracking-tight text-white">{artist.name}</h3>
-              <p className="mt-1 text-sm text-zinc-500">{primaryConcert.title}</p>
-            </div>
-            <ArrowRight className="mt-1 size-5 shrink-0 text-zinc-600 transition group-hover:translate-x-1 group-hover:text-amber-300" aria-hidden="true" />
-          </div>
-          <div className="mt-5 flex items-center gap-2 text-xs text-zinc-500">
-            <MapPin className="size-3.5 text-amber-400" aria-hidden="true" />
-            <span className="truncate">{getVenueLabel(primaryConcert)}</span>
-          </div>
-        </div>
-      </Card>
-    </a>
-  )
+interface HomePageProps {
+  concert: Concert
+  onSelectConcert: (concert: Concert) => void
 }
 
-export function HomePage() {
-  const artists = listArtists()
-  const featuredConcert = getFeaturedConcert()
-  const featuredArtist = getArtistBySlug(featuredConcert.artistId)
+function originalUrlAtTime(concert: Concert, startAtSeconds?: number): string {
+  return concert.source.platform === "youtube"
+    ? getYouTubeUrlAtTime(concert.source.originalUrl, startAtSeconds)
+    : concert.source.originalUrl
+}
+
+export function HomePage({ concert, onSelectConcert }: HomePageProps) {
+  const artist = getArtistById(concert.artistId)
+  const [startAtSeconds, setStartAtSeconds] = useState<number | undefined>()
+  const playerRef = useRef<HTMLDivElement>(null)
+  const recommendations = listConcertSuggestions(concert.artistId, 10)
+  const moreFromArtist = listOtherConcertsByArtistId(concert.artistId, concert.id, 10)
+  const hasSetlist = Boolean(concert.setlist?.length)
+
+  function playSetlistEntry(entry: SetlistEntry) {
+    setStartAtSeconds(entry.startAtSeconds)
+    playerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }
 
   return (
-    <>
-      <section className="relative overflow-hidden border-b border-white/8">
-        <div className="absolute top-0 right-0 -z-10 size-[36rem] translate-x-1/3 -translate-y-1/3 rounded-full bg-amber-500/10 blur-3xl" />
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-          <div className="mb-8 grid items-end gap-6 lg:grid-cols-[1fr_auto]">
-            <div>
-              <Badge className="mb-5 border-amber-300/20 bg-amber-400/10 text-amber-300">
-                <span className="size-1.5 rounded-full bg-amber-300 shadow-[0_0_10px_2px_rgb(252_211_77_/_0.6)]" />
-                Featured performance
-              </Badge>
-              <h1 className="max-w-4xl text-4xl leading-[0.98] font-semibold tracking-[-0.045em] text-white sm:text-6xl lg:text-7xl">
-                David Guetta turns the desert into a stage.
-              </h1>
-              <p className="mt-6 max-w-2xl text-base leading-7 text-zinc-400 sm:text-lg">
-                The Monolith at AlUla opens Openstage: a hand-picked home for full concert films, the places behind them, and every track along the way.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-xs font-medium text-zinc-500 lg:pb-2">
-              <VolumeX className="size-4 text-amber-400" aria-hidden="true" />
-              Starts muted. Turn it up when you're ready.
-            </div>
+    <section className="relative overflow-clip border-b border-white/8">
+      <div className="absolute top-0 right-0 -z-10 size-[36rem] translate-x-1/3 -translate-y-1/3 rounded-full bg-amber-500/10 blur-3xl" />
+      <div className="mx-auto grid max-w-[100rem] grid-cols-[minmax(0,1fr)] gap-x-6 px-4 pt-10 sm:px-6 sm:pt-14 lg:px-8 lg:pt-16 xl:grid-cols-[18rem_minmax(0,1fr)] 2xl:grid-cols-[20rem_minmax(0,1fr)]">
+        <div
+          className={`mb-8 flex flex-col justify-between gap-6 lg:flex-row lg:items-end ${
+            hasSetlist ? "xl:col-start-2" : "xl:col-[1/3]"
+          }`}
+        >
+          <div>
+            <Badge className="mb-5 border-amber-300/20 bg-amber-400/10 text-amber-300">
+              <span className="size-1.5 rounded-full bg-amber-300 shadow-[0_0_10px_2px_rgb(252_211_77_/_0.6)]" />
+              Now on stage
+            </Badge>
+            <p className="text-sm font-semibold text-amber-300">{artist?.name}</p>
+            <h1 className="mt-2 max-w-4xl text-4xl leading-[1.02] font-semibold tracking-[-0.045em] text-white sm:text-6xl">
+              {concert.title}
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-400">{concert.eventName}</p>
           </div>
-
-          <div className="rounded-[1.4rem] border border-white/10 bg-black/50 p-1.5 shadow-2xl shadow-black/40 sm:rounded-[2rem] sm:p-2">
-            <VideoPlayer source={featuredConcert.source} title={featuredConcert.title} autoplay muted />
-          </div>
-
-          <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
-            <div>
-              <p className="text-sm font-semibold text-amber-300">{featuredArtist?.name}</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">{featuredConcert.title}</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-500">{featuredConcert.description}</p>
-              <div className="mt-5">
-                <ConcertMeta concert={featuredConcert} compact />
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="secondary" asChild>
-                <a href={`#/artists/${featuredArtist?.slug}`}>Explore the setlist <Headphones /></a>
-              </Button>
-              <Button variant="outline" asChild>
-                <a href={featuredConcert.source.originalUrl} target="_blank" rel="noreferrer">Watch original <ExternalLink /></a>
-              </Button>
-            </div>
+          <div className="flex items-center gap-2 text-xs font-medium text-zinc-500 lg:pb-2">
+            <VolumeX className="size-4 text-amber-400" aria-hidden="true" />
+            Playback starts muted. Turn it up when you're ready.
           </div>
         </div>
-      </section>
 
-      <section id="browse" className="scroll-mt-24">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-            <div>
-              <p className="text-xs font-bold tracking-[0.18em] text-amber-400 uppercase">The opening collection</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Concert films worth pressing play on.</h2>
-            </div>
-            <p className="max-w-md text-sm leading-6 text-zinc-500">Selected for the sound, the setting, and the feeling that you were there.</p>
-          </div>
-
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {artists.map((artist, index) => (
-              <ArtistCard key={artist.id} artist={artist} concerts={getConcertsByArtistId(artist.id)} rank={index + 1} />
-            ))}
-          </div>
+        <div
+          ref={playerRef}
+          id="concert-player"
+          className={`scroll-mt-24 rounded-[1.4rem] border border-white/10 bg-black/50 p-1.5 shadow-2xl shadow-black/40 sm:rounded-[2rem] sm:p-2 xl:row-start-2 ${
+            hasSetlist ? "xl:col-start-2" : "xl:col-[1/3]"
+          }`}
+        >
+          <VideoPlayer
+            source={concert.source}
+            title={concert.title}
+            startAtSeconds={startAtSeconds}
+            autoplay
+            muted
+          />
         </div>
-      </section>
-    </>
+
+        {concert.setlist?.length ? (
+          <aside
+            className="mt-6 self-start rounded-2xl border border-white/8 bg-white/[0.025] xl:sticky xl:top-24 xl:col-start-1 xl:row-start-2 xl:row-span-2 xl:mt-0 xl:self-stretch xl:overflow-hidden"
+            aria-label="Concert setlist"
+          >
+            <div className="p-4 xl:absolute xl:inset-0 xl:overflow-hidden">
+              <Setlist entries={concert.setlist} onSelect={playSetlistEntry} />
+            </div>
+          </aside>
+        ) : null}
+
+        <div
+          className={`mt-6 grid min-w-0 gap-6 xl:row-start-3 xl:grid-cols-[minmax(0,1fr)_18rem] ${
+            hasSetlist ? "xl:col-start-2" : "xl:col-[1/3]"
+          }`}
+        >
+          <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <p className="max-w-2xl text-sm leading-6 text-zinc-500">{concert.description}</p>
+            <Button variant="outline" asChild className="shrink-0">
+              <a href={originalUrlAtTime(concert, startAtSeconds)} target="_blank" rel="noreferrer">
+                Watch original <ExternalLink />
+              </a>
+            </Button>
+          </div>
+
+          <aside className="rounded-2xl border border-white/8 bg-white/[0.025] p-5" aria-label="Concert details">
+            <ConcertMeta concert={concert} />
+            <div className="mt-4 flex items-start gap-2 text-sm text-zinc-500">
+              <MapPin className="mt-0.5 size-4 shrink-0 text-amber-400" aria-hidden="true" />
+              <span>{concert.venue.name}</span>
+            </div>
+            {concert.recordingNote ? (
+              <p className="mt-4 border-t border-white/8 pt-4 text-xs leading-5 text-zinc-600">Recording note: {concert.recordingNote}</p>
+            ) : null}
+          </aside>
+        </div>
+
+        <div
+          className={`space-y-16 py-16 sm:py-20 xl:row-start-4 ${
+            hasSetlist ? "xl:col-start-2" : "xl:col-[1/3]"
+          }`}
+        >
+          <ConcertCarousel
+            title="Recommended concerts"
+            description="Explore performances from across the rest of the Openstage collection."
+            concerts={recommendations}
+            onSelectConcert={onSelectConcert}
+          />
+
+          {moreFromArtist.length ? (
+            <ConcertCarousel
+              title={`More from ${artist?.name ?? "this artist"}`}
+              description="Keep listening with another recording from the same artist."
+              concerts={moreFromArtist}
+              onSelectConcert={onSelectConcert}
+            />
+          ) : null}
+        </div>
+      </div>
+    </section>
   )
 }
