@@ -11,6 +11,7 @@ import {
   removeLabel,
   type GitHubIssue,
 } from "./github"
+import { signalWorkerWake, waitForWorkerWake } from "./wake"
 
 export type Role = "concert" | "pm" | "feature"
 
@@ -81,8 +82,11 @@ type OpenCodeEvent = {
 }
 
 export function selectIssue(issues: GitHubIssue[], role: Role) {
-  const excluded = new Set(CONFIGS[role].excludedLabels)
-  return issues.find((issue) => !labelNames(issue).some((label) => excluded.has(label))) ?? null
+  const excluded = new Set(CONFIGS[role].excludedLabels.filter((label) => label !== "automation: failed"))
+  const candidates = issues.filter((issue) => !labelNames(issue).some((label) => excluded.has(label)))
+  return candidates.find((issue) => !labelNames(issue).includes("automation: failed"))
+    ?? candidates.find((issue) => labelNames(issue).includes("automation: failed"))
+    ?? null
 }
 
 function roleFrom(raw: string | undefined): Role {
@@ -302,6 +306,7 @@ async function applyResult(role: Role, result: WorkerResult) {
         ? "pm: rejected"
         : "pm: needs-human-review"
     await addLabels(result.issue, [label])
+    if (result.outcome === "approved") await signalWorkerWake("feature")
     if (result.outcome === "rejected") await closeIssue(result.issue)
     return
   }
@@ -320,6 +325,16 @@ async function markFailed(role: Role, issue: GitHubIssue, error: unknown) {
   await removeLabel(issue.number, CONFIGS[role].claimLabel)
 }
 
+async function releaseInterruptedClaims(role: Role) {
+  const config = CONFIGS[role]
+  const issues = await listOpenIssues(config.sourceLabel)
+  const interrupted = issues.filter((issue) => labelNames(issue).includes(config.claimLabel))
+  for (const issue of interrupted) {
+    console.log(`releasing interrupted claim on #${issue.number}`)
+    await removeLabel(issue.number, config.claimLabel)
+  }
+}
+
 export async function cycle(role: Role, dryRun = false) {
   const config = CONFIGS[role]
   console.log(`[${new Date().toISOString()}] checking ${role}`)
@@ -332,6 +347,7 @@ export async function cycle(role: Role, dryRun = false) {
   console.log(`${dryRun ? "would process" : "processing"} #${issue.number}: ${issue.title}`)
   if (dryRun) return true
 
+  await removeLabel(issue.number, "automation: failed")
   await addLabels(issue.number, [config.claimLabel])
   try {
     const result = await runAgent(role, issue)
@@ -361,15 +377,21 @@ async function main() {
 
   await preflight()
   await ensureLabels()
+  await releaseInterruptedClaims(role)
   do {
+    let completedWork = false
     try {
-      await cycle(role, dryRun)
+      completedWork = await cycle(role, dryRun)
     } catch (error) {
       console.error(error)
     }
     if (!once) {
+      if (completedWork) {
+        console.log("item completed; checking the queue again immediately")
+        continue
+      }
       console.log(`sleeping for ${interval / 60_000} minutes`)
-      await Bun.sleep(interval)
+      if (await waitForWorkerWake(role, interval)) console.log("wake signal received")
     }
   } while (!once)
 }

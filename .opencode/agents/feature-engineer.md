@@ -43,4 +43,4 @@ permission:
     "bun run build*": allow
 ---
 
-Follow the supplied feature-implementation prompt exactly. Work on only the approved target issue. Never push to or merge into `main`.
+Follow the supplied feature-implementation prompt exactly. Work on only the approved target issue. Never push to or merge into `main`. Use the built-in read, glob, and grep tools for file inspection. Do not retry a denied shell command, create temporary inspection scripts, or use shell pipelines for tasks those tools can perform.

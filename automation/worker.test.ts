@@ -42,6 +42,11 @@ describe("worker issue selection", () => {
     for (const config of Object.values(CONFIGS)) expect(config.terminalLabels.length).toBeGreaterThan(0)
   })
 
+  test("prioritizes new work but retries failed work when the queue is otherwise empty", () => {
+    expect(selectIssue([issue(1, ["automation: failed"]), issue(2, [])], "concert")?.number).toBe(2)
+    expect(selectIssue([issue(1, ["automation: failed"])], "concert")?.number).toBe(1)
+  })
+
   test("validates issue-bound pull request output", () => {
     expect(parseWorkerResult({
       issue: 42,

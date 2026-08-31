@@ -75,7 +75,7 @@ tasks:
         if tmux has-session -t openstage-concert 2>/dev/null; then
           echo "openstage-concert already running"
         else
-          tmux new-session -d -s openstage-concert "cd '{{.WORKTREE_ROOT}}/concert' && exec bun --env-file='{{.ROOT}}/.env' automation/worker.ts concert"
+          tmux new-session -d -s openstage-concert "cd '{{.WORKTREE_ROOT}}/concert' && OPENSTAGE_STATE_ROOT='{{.ROOT}}/.worker-state' exec bun --env-file='{{.ROOT}}/.env' automation/worker.ts concert"
           echo "started openstage-concert"
         fi
 
@@ -92,7 +92,7 @@ tasks:
         if tmux has-session -t openstage-pm 2>/dev/null; then
           echo "openstage-pm already running"
         else
-          tmux new-session -d -s openstage-pm "cd '{{.WORKTREE_ROOT}}/pm' && exec bun --env-file='{{.ROOT}}/.env' automation/worker.ts pm"
+          tmux new-session -d -s openstage-pm "cd '{{.WORKTREE_ROOT}}/pm' && OPENSTAGE_STATE_ROOT='{{.ROOT}}/.worker-state' exec bun --env-file='{{.ROOT}}/.env' automation/worker.ts pm"
           echo "started openstage-pm"
         fi
 
@@ -109,7 +109,7 @@ tasks:
         if tmux has-session -t openstage-feature 2>/dev/null; then
           echo "openstage-feature already running"
         else
-          tmux new-session -d -s openstage-feature "cd '{{.WORKTREE_ROOT}}/feature' && exec bun --env-file='{{.ROOT}}/.env' automation/worker.ts feature"
+          tmux new-session -d -s openstage-feature "cd '{{.WORKTREE_ROOT}}/feature' && OPENSTAGE_STATE_ROOT='{{.ROOT}}/.worker-state' exec bun --env-file='{{.ROOT}}/.env' automation/worker.ts feature"
           echo "started openstage-feature"
         fi
 
@@ -167,6 +167,31 @@ tasks:
     cmds:
       - task: workers:stop
       - task: workers:start
+
+  workers:wake:
+    desc: Wake all workers for an immediate GitHub check
+    cmds:
+      - task: concert:wake
+      - task: pm:wake
+      - task: feature:wake
+
+  concert:wake:
+    desc: Wake the concert worker for an immediate GitHub check
+    cmds:
+      - mkdir -p '{{.ROOT}}/.worker-state/wake'
+      - touch '{{.ROOT}}/.worker-state/wake/concert'
+
+  pm:wake:
+    desc: Wake the product-manager worker for an immediate GitHub check
+    cmds:
+      - mkdir -p '{{.ROOT}}/.worker-state/wake'
+      - touch '{{.ROOT}}/.worker-state/wake/pm'
+
+  feature:wake:
+    desc: Wake the feature worker for an immediate GitHub check
+    cmds:
+      - mkdir -p '{{.ROOT}}/.worker-state/wake'
+      - touch '{{.ROOT}}/.worker-state/wake/feature'
 
   concert:attach:
     cmds:
