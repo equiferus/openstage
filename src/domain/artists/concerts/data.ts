@@ -440,7 +440,7 @@ export const concerts: readonly Concert[] = [
       uploader: "Marilyn666Manson",
     },
     description:
-      "A nine-song festival set from the Dead to the World tour, captured at the Butzweilerhof grounds during the 1997 Bizarre Festival.",
+      "A full ten-entry festival performance, including its intro, from the Dead to the World tour, captured at the Butzweilerhof grounds during the 1997 Bizarre Festival.",
     recordingNote:
       "The event listing and Rockpalast archive place this performance on August 16, 1997; the submitted July 21 date was corrected.",
     setlist: [
@@ -448,7 +448,7 @@ export const concerts: readonly Concert[] = [
       { title: "Angel With the Scabbed Wings", startAtSeconds: seconds("02:40") },
       { title: "Get Your Gunn", startAtSeconds: seconds("05:56") },
       { title: "Cake and Sodomy", startAtSeconds: seconds("09:09") },
-      { title: "Dried Up, Tied and Dead to the World", startAtSeconds: seconds("13:04") },
+      { title: "Dried Up, Tied Up and Dead to the World", startAtSeconds: seconds("13:04") },
       { title: "Tourniquet", startAtSeconds: seconds("18:00") },
       { title: "Lunchbox", startAtSeconds: seconds("22:18") },
       { title: "Sweet Dreams (Are Made of This)", startAtSeconds: seconds("27:21") },
