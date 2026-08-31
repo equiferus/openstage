@@ -16,7 +16,7 @@ describe("curated catalog", () => {
   it("exposes the expected artists in homepage order", () => {
     const artists = listArtists()
 
-    expect(artists).toHaveLength(6)
+    expect(artists).toHaveLength(7)
     expect(artists.map((artist) => artist.name)).toEqual([
       "David Guetta",
       "Hans Zimmer",
@@ -24,15 +24,16 @@ describe("curated catalog", () => {
       "Fred again..",
       "ODESZA",
       "Armin van Buuren",
+      "DJ M-Zone",
     ])
-    expect(artists.map((artist) => artist.homeRank)).toEqual([1, 2, 3, 4, 5, 6])
+    expect(artists.map((artist) => artist.homeRank)).toEqual([1, 2, 3, 4, 5, 6, 7])
   })
 
-  it("contains eight valid recordings and one featured performance", () => {
+  it("contains nine valid recordings and one featured performance", () => {
     const artists = listArtists()
     const concerts = listConcerts()
 
-    expect(concerts).toHaveLength(8)
+    expect(concerts).toHaveLength(9)
     expect(new Set(concerts.map((concert) => concert.id)).size).toBe(concerts.length)
     expect(concerts.filter((concert) => concert.featured)).toHaveLength(1)
     expect(getFeaturedConcert().id).toBe("david-guetta-monolith-alula")
@@ -41,7 +42,9 @@ describe("curated catalog", () => {
       expect(artists.some((artist) => artist.id === concert.artistId)).toBe(true)
       expect(concert.source.originalUrl).toMatch(/^https:\/\//)
       expect(concert.durationSeconds).toBeGreaterThan(0)
-      expect(concert.setlist?.length).toBeGreaterThan(0)
+      if (concert.setlist) {
+        expect(concert.setlist.length).toBeGreaterThan(0)
+      }
       for (const entry of concert.setlist ?? []) {
         if (entry.startAtSeconds !== undefined) {
           expect(entry.startAtSeconds).toBeGreaterThanOrEqual(0)
@@ -58,6 +61,8 @@ describe("curated catalog", () => {
     expect(david && getConcertsByArtistId(david.id)).toHaveLength(3)
     expect(getConcertById("rufus-du-sol-live-joshua-tree")?.venue.city).toBe("Joshua Tree")
     expect(getConcertsByArtistId("hans-zimmer")).toHaveLength(1)
+    expect(getConcertsByArtistId("dj-m-zone")).toHaveLength(1)
+    expect(getConcertById("dj-m-zone-doncaster-warehouse-1992")?.durationSeconds).toBe(9282)
     expect(getArtistById("hans-zimmer")?.name).toBe("Hans Zimmer")
     expect(getArtistBySlug("missing")).toBeUndefined()
   })
@@ -69,6 +74,7 @@ describe("curated catalog", () => {
       "fred-again",
       "odesza",
       "armin-van-buuren",
+      "dj-m-zone",
     ])
     expect(listConcertSuggestions("hans-zimmer").map((concert) => concert.id)).toEqual([
       "david-guetta-monolith-alula",
@@ -76,6 +82,7 @@ describe("curated catalog", () => {
       "fred-again-fuji-rock-2025",
       "odesza-finale-gorge",
       "armin-van-buuren-best-of-armin-only",
+      "dj-m-zone-doncaster-warehouse-1992",
       "david-guetta-nye-louvre-abu-dhabi",
       "david-guetta-united-at-home-dubai",
     ])
@@ -88,8 +95,8 @@ describe("curated catalog", () => {
   it("creates searchable artist and concert rows", () => {
     const rows = createCatalogSearchRows(listArtists(), listConcerts())
 
-    expect(rows).toHaveLength(14)
-    expect(rows.filter((row) => row.kind === "artist")).toHaveLength(6)
+    expect(rows).toHaveLength(16)
+    expect(rows.filter((row) => row.kind === "artist")).toHaveLength(7)
     expect(rows.find((row) => row.concertId === "rufus-du-sol-live-joshua-tree")?.searchText).toContain("Joshua Tree")
   })
 })

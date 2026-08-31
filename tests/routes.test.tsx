@@ -24,6 +24,7 @@ describe("Openstage single-page catalog", () => {
       "Play Fuji Rock Festival 2025 by Fred again..",
       "Play The Finale — Live from the Gorge by ODESZA",
       "Play The Best of Armin Only by Armin van Buuren",
+      "Play Doncaster Warehouse 1992 by DJ M-Zone",
     ])
 
     expect(screen.getByRole("heading", { name: "More from David Guetta" })).toBeInTheDocument()

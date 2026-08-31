@@ -5,6 +5,7 @@ export type ArtistId =
   | "fred-again"
   | "odesza"
   | "armin-van-buuren"
+  | "dj-m-zone"
 
 export interface Artist {
   id: ArtistId

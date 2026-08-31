@@ -395,4 +395,29 @@ export const concerts: readonly Concert[] = [
       { title: "Looking for Your Name", startAtSeconds: seconds("03:06:07") },
     ],
   },
+  {
+    id: "dj-m-zone-doncaster-warehouse-1992",
+    artistId: "dj-m-zone",
+    title: "Doncaster Warehouse 1992",
+    eventName: "Doncaster Warehouse",
+    recordedOn: "1992",
+    dateLabel: "1992",
+    venue: {
+      name: "Doncaster Warehouse",
+      city: "Doncaster",
+      region: "South Yorkshire",
+      country: "United Kingdom",
+    },
+    durationSeconds: 9282,
+    source: {
+      platform: "youtube",
+      videoId: "lIsZVlbasiA",
+      originalUrl: "https://www.youtube.com/watch?v=lIsZVlbasiA",
+      uploader: "DJ M-Zone",
+    },
+    description:
+      "Raw footage from three 1992 nights at Doncaster Warehouse, moving through piano house, hardcore, jungle, hoover, and techno.",
+    recordingNote:
+      "This edit combines footage from three separate nights. The source does not provide a verified tracklist.",
+  },
 ]

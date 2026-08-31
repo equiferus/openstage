@@ -55,4 +55,13 @@ export const artists = [
     origin: "Leiden, Netherlands",
     homeRank: 6,
   },
+  {
+    id: "dj-m-zone",
+    slug: "dj-m-zone",
+    name: "DJ M-Zone",
+    summary:
+      "A Doncaster rave pioneer whose early Warehouse sets helped shape the UK's underground hard-trance sound.",
+    origin: "Doncaster, South Yorkshire, United Kingdom",
+    homeRank: 7,
+  },
 ] as const satisfies readonly Artist[]
