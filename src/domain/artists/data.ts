@@ -64,4 +64,13 @@ export const artists = [
     origin: "Doncaster, South Yorkshire, United Kingdom",
     homeRank: 7,
   },
+  {
+    id: "marilyn-manson",
+    slug: "marilyn-manson",
+    name: "Marilyn Manson",
+    summary:
+      "A confrontational American rock band whose theatrical industrial sound has reshaped late-1990s alternative culture.",
+    origin: "Fort Lauderdale, Florida, USA",
+    homeRank: 8,
+  },
 ] as const satisfies readonly Artist[]

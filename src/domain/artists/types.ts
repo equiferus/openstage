@@ -6,6 +6,7 @@ export type ArtistId =
   | "odesza"
   | "armin-van-buuren"
   | "dj-m-zone"
+  | "marilyn-manson"
 
 export interface Artist {
   id: ArtistId

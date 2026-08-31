@@ -16,7 +16,7 @@ describe("curated catalog", () => {
   it("exposes the expected artists in homepage order", () => {
     const artists = listArtists()
 
-    expect(artists).toHaveLength(7)
+    expect(artists).toHaveLength(8)
     expect(artists.map((artist) => artist.name)).toEqual([
       "David Guetta",
       "Hans Zimmer",
@@ -25,15 +25,16 @@ describe("curated catalog", () => {
       "ODESZA",
       "Armin van Buuren",
       "DJ M-Zone",
+      "Marilyn Manson",
     ])
-    expect(artists.map((artist) => artist.homeRank)).toEqual([1, 2, 3, 4, 5, 6, 7])
+    expect(artists.map((artist) => artist.homeRank)).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
   })
 
-  it("contains nine valid recordings and one featured performance", () => {
+  it("contains ten valid recordings and one featured performance", () => {
     const artists = listArtists()
     const concerts = listConcerts()
 
-    expect(concerts).toHaveLength(9)
+    expect(concerts).toHaveLength(10)
     expect(new Set(concerts.map((concert) => concert.id)).size).toBe(concerts.length)
     expect(concerts.filter((concert) => concert.featured)).toHaveLength(1)
     expect(getFeaturedConcert().id).toBe("david-guetta-monolith-alula")
@@ -75,6 +76,7 @@ describe("curated catalog", () => {
       "odesza",
       "armin-van-buuren",
       "dj-m-zone",
+      "marilyn-manson",
     ])
     expect(listConcertSuggestions("hans-zimmer").map((concert) => concert.id)).toEqual([
       "david-guetta-monolith-alula",
@@ -83,6 +85,7 @@ describe("curated catalog", () => {
       "odesza-finale-gorge",
       "armin-van-buuren-best-of-armin-only",
       "dj-m-zone-doncaster-warehouse-1992",
+      "marilyn-manson-bizarre-festival-1997",
       "david-guetta-nye-louvre-abu-dhabi",
       "david-guetta-united-at-home-dubai",
     ])
@@ -95,8 +98,8 @@ describe("curated catalog", () => {
   it("creates searchable artist and concert rows", () => {
     const rows = createCatalogSearchRows(listArtists(), listConcerts())
 
-    expect(rows).toHaveLength(16)
-    expect(rows.filter((row) => row.kind === "artist")).toHaveLength(7)
+    expect(rows).toHaveLength(18)
+    expect(rows.filter((row) => row.kind === "artist")).toHaveLength(8)
     expect(rows.find((row) => row.concertId === "rufus-du-sol-live-joshua-tree")?.searchText).toContain("Joshua Tree")
   })
 })
