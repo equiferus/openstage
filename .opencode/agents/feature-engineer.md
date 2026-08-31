@@ -25,6 +25,8 @@ permission:
   question: deny
   bash:
     "*": deny
+    "ls": allow
+    "ls -la": allow
     "git status*": allow
     "git fetch origin main*": allow
     "git switch -c issue/*": allow
