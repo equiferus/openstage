@@ -496,7 +496,6 @@ async function orchestrateDeliveries() {
 
     const pull = await getPullRequest(listedPull.number)
     if (pull.draft) continue
-    if (pull.mergeable === null || pull.mergeable === undefined) continue
     if (pull.base.ref !== "main") {
       await returnToImplementation(issue, pull, "Blocking finding: the pull request must target `main`.")
       return true
