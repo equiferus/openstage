@@ -1,0 +1,145 @@
+version: "3"
+
+vars:
+  ROOT:
+    sh: pwd
+  WORKTREE_ROOT: "{{.ROOT}}/.worker-state/worktrees"
+
+tasks:
+  install:
+    desc: Install exact dependencies from bun.lock
+    cmds:
+      - bun install --frozen-lockfile
+
+  check:
+    desc: Run lint, application and automation tests, and production build
+    cmds:
+      - bun run check
+
+  workers:setup:
+    desc: Validate credentials, labels, tools, and isolated worker checkouts
+    cmds:
+      - test -f .env || { echo "Missing .env; copy .env.example and set GITHUB_TOKEN"; exit 1; }
+      - command -v bun >/dev/null
+      - command -v git >/dev/null
+      - command -v opencode >/dev/null
+      - command -v tmux >/dev/null
+      - bun --env-file=.env automation/worker.ts --check
+      - task: workers:prepare
+
+  workers:prepare:
+    internal: true
+    cmds:
+      - |
+        set -eu
+        mkdir -p '{{.WORKTREE_ROOT}}'
+        root_commit=$(git rev-parse HEAD)
+        for role in concert pm feature; do
+          session="openstage-$role"
+          if tmux has-session -t "$session" 2>/dev/null; then
+            echo "Worker is running; leaving its checkout unchanged: $session"
+            continue
+          fi
+          worker_dir='{{.WORKTREE_ROOT}}/'$role
+          if [ -e "$worker_dir/.git" ]; then
+            if [ -n "$(git -C "$worker_dir" status --porcelain)" ]; then
+              echo "Worker checkout is dirty: $worker_dir"
+              exit 1
+            fi
+            git -C "$worker_dir" switch --detach "$root_commit"
+          else
+            git worktree add --detach "$worker_dir" "$root_commit"
+          fi
+          (cd "$worker_dir" && bun install --frozen-lockfile)
+        done
+
+  workers:start:
+    desc: Start all three hourly workers in isolated tmux sessions
+    cmds:
+      - task: workers:setup
+      - task: concert:start
+      - task: pm:start
+      - task: feature:start
+      - task: workers:status
+
+  concert:start:
+    internal: true
+    cmds:
+      - |
+        if tmux has-session -t openstage-concert 2>/dev/null; then
+          echo "openstage-concert already running"
+        else
+          tmux new-session -d -s openstage-concert "cd '{{.WORKTREE_ROOT}}/concert' && exec bun --env-file='{{.ROOT}}/.env' automation/worker.ts concert"
+          echo "started openstage-concert"
+        fi
+
+  pm:start:
+    internal: true
+    cmds:
+      - |
+        if tmux has-session -t openstage-pm 2>/dev/null; then
+          echo "openstage-pm already running"
+        else
+          tmux new-session -d -s openstage-pm "cd '{{.WORKTREE_ROOT}}/pm' && exec bun --env-file='{{.ROOT}}/.env' automation/worker.ts pm"
+          echo "started openstage-pm"
+        fi
+
+  feature:start:
+    internal: true
+    cmds:
+      - |
+        if tmux has-session -t openstage-feature 2>/dev/null; then
+          echo "openstage-feature already running"
+        else
+          tmux new-session -d -s openstage-feature "cd '{{.WORKTREE_ROOT}}/feature' && exec bun --env-file='{{.ROOT}}/.env' automation/worker.ts feature"
+          echo "started openstage-feature"
+        fi
+
+  workers:status:
+    desc: Show worker status
+    cmds:
+      - |
+        for session in openstage-concert openstage-pm openstage-feature; do
+          if tmux has-session -t "$session" 2>/dev/null; then
+            echo "RUNNING  $session"
+          else
+            echo "STOPPED  $session"
+          fi
+        done
+
+  workers:stop:
+    desc: Stop all worker sessions
+    cmds:
+      - tmux kill-session -t openstage-concert 2>/dev/null || true
+      - tmux kill-session -t openstage-pm 2>/dev/null || true
+      - tmux kill-session -t openstage-feature 2>/dev/null || true
+
+  workers:restart:
+    desc: Stop, update isolated checkouts, and restart all workers
+    cmds:
+      - task: workers:stop
+      - task: workers:start
+
+  concert:attach:
+    cmds:
+      - tmux attach -t openstage-concert
+
+  pm:attach:
+    cmds:
+      - tmux attach -t openstage-pm
+
+  feature:attach:
+    cmds:
+      - tmux attach -t openstage-feature
+
+  concert:log:
+    cmds:
+      - tmux capture-pane -p -S -200 -t openstage-concert
+
+  pm:log:
+    cmds:
+      - tmux capture-pane -p -S -200 -t openstage-pm
+
+  feature:log:
+    cmds:
+      - tmux capture-pane -p -S -200 -t openstage-feature

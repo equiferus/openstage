@@ -17,7 +17,7 @@ jobs:
   ensure-labels:
     runs-on: ubuntu-latest
     steps:
-      - name: Create suggestion labels
+      - name: Create automation labels
         uses: actions/github-script@v9
         with:
           script: |
@@ -32,6 +32,17 @@ jobs:
                 color: '8b5cf6',
                 description: 'A proposed improvement to the Openstage app',
               },
+              { name: 'automation: claimed', color: '1d76db', description: 'Claimed by an automation worker' },
+              { name: 'automation: failed', color: 'b60205', description: 'Automation stopped and requires attention' },
+              { name: 'pm: reviewing', color: 'fbca04', description: 'Under autonomous product review' },
+              { name: 'pm: rejected', color: 'd93f0b', description: 'Rejected during product review' },
+              { name: 'pm: needs-human-review', color: 'e99695', description: 'Requires a human product decision' },
+              { name: 'ready-for-production', color: '0e8a16', description: 'Approved and ready for implementation' },
+              { name: 'implementation: working', color: '0052cc', description: 'Being implemented by automation' },
+              { name: 'implementation: pr-opened', color: '5319e7', description: 'Implementation pull request is open' },
+              { name: 'implementation: blocked', color: 'b60205', description: 'Implementation is blocked' },
+              { name: 'curation: rejected', color: 'd93f0b', description: 'Concert suggestion did not pass curation' },
+              { name: 'curation: needs-info', color: 'fbca04', description: 'Concert suggestion needs more information' },
             ]
 
             for (const label of labels) {
