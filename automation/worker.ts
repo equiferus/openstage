@@ -29,6 +29,7 @@ import {
   requiredAgentCommand,
 } from "./agent-runner"
 import { deliveryCheckState, linkedIssueNumber, pullRequestPatch } from "./delivery"
+import { deleteBranchViaGit, mergePullRequestViaGit } from "./git-delivery"
 import { signalWorkerWake, waitForWorkerWake } from "./wake"
 
 export type Role = "concert" | "pm" | "feature"
@@ -554,12 +555,28 @@ async function orchestrateDeliveries() {
         console.log(`PR #${pull.number} checks changed during PM review; waiting`)
         return false
       }
-      const merged = await mergePullRequest(currentPull.number, currentPull.head.sha)
+      let merged: Awaited<ReturnType<typeof mergePullRequest>>
+      try {
+        merged = await mergePullRequest(currentPull.number, currentPull.head.sha)
+      } catch (error) {
+        if (!(error instanceof Error) || !error.message.includes("Resource not accessible by personal access token")) {
+          throw error
+        }
+        console.log(`GitHub token cannot merge PR #${currentPull.number}; using reviewed SSH merge fallback`)
+        merged = mergePullRequestViaGit(currentPull, issue.number, `${import.meta.dir}/..`)
+      }
       if (!merged.merged) throw new Error(`GitHub refused to merge PR #${currentPull.number}: ${merged.message}`)
       await comment(issue.number, `PM delivery review approved and squash-merged ${pull.html_url} at commit \`${pull.head.sha.slice(0, 12)}\`. GitHub will close this issue through the PR's closing keyword.`)
       await addLabels(issue.number, ["implementation: merged"])
       await removeLabel(issue.number, "implementation: pr-opened")
-      await deleteBranch(pull.head.ref)
+      try {
+        await deleteBranch(pull.head.ref)
+      } catch (error) {
+        if (!(error instanceof Error) || !error.message.includes("Resource not accessible by personal access token")) {
+          throw error
+        }
+        deleteBranchViaGit(pull.head.ref, issue.number, `${import.meta.dir}/..`)
+      }
       console.log(`PM merged PR #${pull.number} for issue #${issue.number}`)
       return true
     } finally {
