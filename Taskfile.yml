@@ -22,7 +22,6 @@ tasks:
       - test -f .env || { echo "Missing .env; copy .env.example and set GITHUB_TOKEN"; exit 1; }
       - command -v bun >/dev/null
       - command -v git >/dev/null
-      - command -v opencode >/dev/null
       - command -v tmux >/dev/null
       - bun --env-file=.env automation/worker.ts --check
       - task: workers:prepare

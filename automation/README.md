@@ -1,12 +1,12 @@
 # Openstage automation workers
 
-Three unattended OpenCode workers process suggestion issues:
+Three unattended AI workers process suggestion issues through one provider-neutral runner:
 
 - `concert-curator` validates concert submissions and opens focused data PRs.
 - `product-manager` performs a read-only product review and approves, rejects, or requests human review.
 - `feature-engineer` implements approved feature issues and opens PRs.
 
-Workers check GitHub every 5 minutes and process exactly one issue at a time per role. After finishing an item, a worker checks again immediately and drains its queue serially. PM approvals wake the feature worker immediately instead of waiting for its next poll. A role never starts another issue until its current OpenCode run and all supervisor actions finish. Concert and feature agents follow the repository's `github-issue-delivery` skill and may push only `issue/*` branches. The trusted supervisor creates PRs from validated agent output; nothing pushes directly to or merges into `main`. Each worker gets an isolated Git worktree under `.worker-state/worktrees`, preventing concurrent agents from changing the same checkout.
+Workers check GitHub every 5 minutes and process exactly one issue at a time per role. After finishing an item, a worker checks again immediately and drains its queue serially. PM approvals wake the feature worker immediately instead of waiting for its next poll. A role never starts another issue until its current agent run and all supervisor actions finish. Dirty partial work is always resumed before a newer queue item. Concert and feature agents follow the repository's `github-issue-delivery` skill and may push only `issue/*` branches. The trusted supervisor creates PRs from validated agent output; nothing pushes directly to or merges into `main`. Each worker gets an isolated Git worktree under `.worker-state/worktrees`, preventing concurrent agents from changing the same checkout.
 
 Agent runs are bounded so a confused model cannot occupy a queue forever: concert curation has an 8-minute deadline, PM review 5 minutes, and feature implementation 20 minutes. A timed-out run is stopped, its partial worktree changes are preserved, and the issue is retried serially after the cooldown. Advanced operators can override these with `WORKER_CONCERT_TIMEOUT_MS`, `WORKER_PM_TIMEOUT_MS`, and `WORKER_FEATURE_TIMEOUT_MS` (minimum 60000).
 
@@ -15,16 +15,25 @@ Agent runs are bounded so a confused model cannot occupy a queue forever: concer
 Install these once on the VM:
 
 - [Bun](https://bun.sh/) 1.3 or newer
-- [OpenCode](https://opencode.ai/docs/)
+- [Codex CLI](https://developers.openai.com/codex/cli/) (default), or [OpenCode](https://opencode.ai/docs/)
 - [Task](https://taskfile.dev/)
 - Git and tmux
 
-Authenticate OpenCode with the model provider that should run the workers:
+Authenticate Codex once on the VM:
+
+```sh
+codex login
+codex login status
+```
+
+Codex defaults to `gpt-5.6-luna` with low reasoning effort. To use OpenCode instead, authenticate it and set `USE_OPENCODE=true` in `.env`:
 
 ```sh
 opencode auth login
 opencode auth list
 ```
+
+Switching back requires only `USE_OPENCODE=false` followed by `task workers:restart`. Optional `CODEX_MODEL` and `CODEX_REASONING_EFFORT` variables let operators change the Codex model without editing source code.
 
 ## GitHub token
 
@@ -91,7 +100,7 @@ Use `command -v task` for the exact Task binary path. tmux keeps the workers ava
 
 Transient labels (`automation: claimed`, `pm: reviewing`, and `implementation: working`) are separate from terminal outcomes. On startup, each worker releases stale claims left by an interrupted process. A failed run removes its claim, adds `automation: failed`, and comments with the error. New work is attempted first; failed work is retried after the five-minute cooldown when no new item is waiting. Use a role-specific `*:wake` task to interrupt an idle wait without restarting or losing unfinished files.
 
-The PM cannot edit files or run shell commands. Implementation agents can edit application code and run only checked-in Git and Bun command patterns. The concert agent uses the repository's bounded YouTube oEmbed helper instead of downloading and parsing huge watch pages. GitHub credentials are removed from every OpenCode child process. Agents return a raw JSON final response through OpenCode's JSON event stream; the trusted Bun supervisor validates it and alone comments, labels, closes issues, and creates PRs. No worker merges its own pull request.
+The PM runs in a read-only sandbox. Codex implementation agents run in a workspace-write sandbox with automatic approval review; OpenCode retains its checked-in command allowlists. The concert agent uses the repository's bounded YouTube oEmbed helper instead of downloading and parsing huge watch pages. GitHub credentials are removed from every child process. Agents return a raw JSON final response through their provider's JSON event stream; the trusted Bun supervisor validates it and alone comments, labels, closes issues, and creates PRs. No worker merges its own pull request.
 
 Every successful PM outcome must contain the complete `## Product review` response. The supervisor posts that response before adding an approval/rejection label or closing the issue. If the PM agent fails to produce a valid review, the supervisor posts an automation-failure comment and leaves the product decision unapplied.
 

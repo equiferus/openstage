@@ -21,7 +21,7 @@ Prefer to contribute the change yourself? Fork the repository, add the artist or
 
 ## 🤖 Suggestion automation
 
-The repository includes three permission-separated OpenCode workers for concert curation, product review, and approved feature implementation. See [automation/README.md](automation/README.md) for VM setup, GitHub token permissions, startup, logs, and recovery.
+The repository includes three permission-separated AI workers for concert curation, product review, and approved feature implementation. A provider-neutral wrapper uses Codex (`gpt-5.6-luna`, low reasoning) by default and can switch to OpenCode with one environment flag. See [automation/README.md](automation/README.md) for VM setup, provider selection, GitHub token permissions, startup, logs, and recovery.
 
 ## 🛠️ Local development
 

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 
-import { agentTimeoutMs, collectAgentResponse, CONFIGS, parseAgentResponse, parseWorkerResult, selectIssue, type Role } from "./worker"
+import { agentTimeoutMs, CONFIGS, parseAgentResponse, parseWorkerResult, selectIssue, type Role } from "./worker"
+import { collectAgentResponse } from "./agent-runner"
 import type { GitHubIssue } from "./github"
 
 function issue(number: number, labels: string[]): GitHubIssue {
@@ -54,6 +55,10 @@ describe("worker issue selection", () => {
     expect(selectIssue([issue(1, ["automation: failed"])], "concert")?.number).toBe(1)
   })
 
+  test("keeps dirty issue work ahead of newer queue items", () => {
+    expect(selectIssue([issue(7, ["automation: failed"]), issue(8, [])], "concert", 7)?.number).toBe(7)
+  })
+
   test("validates issue-bound pull request output", () => {
     expect(parseWorkerResult({
       issue: 42,
@@ -85,7 +90,7 @@ describe("worker issue selection", () => {
     ].join("\n")
     const stream = new Response(events).body
     if (!stream) throw new Error("Expected a response body")
-    expect(await collectAgentResponse(stream)).toContain('"issue":42')
+    expect(await collectAgentResponse(stream, "opencode")).toContain('"issue":42')
   })
 
   test.each([
