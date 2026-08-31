@@ -1,12 +1,12 @@
-name: Recording suggestion
-description: Suggest a remarkable live performance for the Openstage collection.
-title: "[Recording]: "
+name: Concert suggestion
+description: Suggest a remarkable live concert for the Openstage collection.
+title: "[Concert]: "
 labels:
-  - curation
+  - "suggestion: concert"
 body:
   - type: markdown
     attributes:
-      value: Thanks for helping build Openstage. Please share the best available original source and as much event context as you can.
+      value: Thanks for helping build Openstage. Concert suggestions are reviewed independently from app feature requests. Please share the best available original source and as much event context as you can.
   - type: input
     id: artist
     attributes:

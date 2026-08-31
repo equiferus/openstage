@@ -1,12 +1,10 @@
 import type { ReactNode } from "react"
-import { Code2, Menu, Play, Plus } from "lucide-react"
+import { Code2, Play } from "lucide-react"
 
 import type { Concert } from "@/domain/artists/concerts/api"
 import { Button } from "@/lib/ui/primitives/button"
 import { SearchDrawer } from "@/lib/ui/search-drawer"
-
-const suggestionUrl =
-  "https://github.com/equiferus/openstage/issues/new?template=recording-suggestion.yml"
+import { SuggestionDrawer } from "@/lib/ui/suggestion-drawer"
 
 interface SiteShellProps {
   children: ReactNode
@@ -39,13 +37,7 @@ export function SiteShell({ children, onSelectConcert }: SiteShellProps) {
           </a>
           <div className="flex items-center gap-1 sm:gap-2">
             <SearchDrawer onSelectConcert={onSelectConcert} />
-            <Button variant="outline" size="sm" asChild>
-              <a href={suggestionUrl} target="_blank" rel="noreferrer">
-                <Plus aria-hidden="true" />
-                <span className="hidden xs:inline">Suggest a recording</span>
-                <span className="xs:hidden">Suggest</span>
-              </a>
-            </Button>
+            <SuggestionDrawer />
           </div>
         </div>
       </header>
@@ -59,11 +51,7 @@ export function SiteShell({ children, onSelectConcert }: SiteShellProps) {
             <p className="mt-3 max-w-md leading-6">A community-curated index of remarkable live recordings. Every performance links back to its original source.</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" asChild>
-              <a href={suggestionUrl} target="_blank" rel="noreferrer">
-                <Menu aria-hidden="true" /> Suggest a set
-              </a>
-            </Button>
+            <SuggestionDrawer variant="ghost" />
             <Button variant="ghost" size="icon" asChild>
               <a href="https://github.com/equiferus/openstage" target="_blank" rel="noreferrer" aria-label="Openstage on GitHub">
                 <Code2 aria-hidden="true" />
