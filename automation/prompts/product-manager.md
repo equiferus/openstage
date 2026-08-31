@@ -37,4 +37,6 @@ As your only write and final action, write exactly one JSON object to `automatio
 
 The trusted worker validates this file and performs all comments, labels, and closure. Do not access credentials or mutate GitHub directly.
 
+Every section is mandatory, even when brief. The worker rejects the result unless the complete structured review is present and its written decision matches `outcome`. No decision label or issue closure occurs unless the GitHub comment is posted successfully first.
+
 Do not modify application files, create branches or PRs, implement the feature, or substantially reinterpret the proposal.

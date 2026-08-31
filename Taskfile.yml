@@ -54,15 +54,21 @@ tasks:
         done
 
   workers:start:
-    desc: Start all three hourly workers in isolated tmux sessions
+    desc: Start all three 15-minute workers in isolated tmux sessions
     cmds:
       - task: workers:setup
-      - task: concert:start
-      - task: pm:start
-      - task: feature:start
+      - task: concert:run
+      - task: pm:run
+      - task: feature:run
       - task: workers:status
 
   concert:start:
+    desc: Prepare and start only the concert worker
+    cmds:
+      - task: workers:setup
+      - task: concert:run
+
+  concert:run:
     internal: true
     cmds:
       - |
@@ -74,6 +80,12 @@ tasks:
         fi
 
   pm:start:
+    desc: Prepare and start only the product-manager worker
+    cmds:
+      - task: workers:setup
+      - task: pm:run
+
+  pm:run:
     internal: true
     cmds:
       - |
@@ -85,6 +97,12 @@ tasks:
         fi
 
   feature:start:
+    desc: Prepare and start only the feature worker
+    cmds:
+      - task: workers:setup
+      - task: feature:run
+
+  feature:run:
     internal: true
     cmds:
       - |
@@ -113,6 +131,36 @@ tasks:
       - tmux kill-session -t openstage-concert 2>/dev/null || true
       - tmux kill-session -t openstage-pm 2>/dev/null || true
       - tmux kill-session -t openstage-feature 2>/dev/null || true
+
+  concert:stop:
+    desc: Stop only the concert worker
+    cmds:
+      - tmux kill-session -t openstage-concert 2>/dev/null || true
+
+  pm:stop:
+    desc: Stop only the product-manager worker
+    cmds:
+      - tmux kill-session -t openstage-pm 2>/dev/null || true
+
+  feature:stop:
+    desc: Stop only the feature worker
+    cmds:
+      - tmux kill-session -t openstage-feature 2>/dev/null || true
+
+  concert:status:
+    desc: Show concert worker status
+    cmds:
+      - tmux has-session -t openstage-concert 2>/dev/null && echo "RUNNING  openstage-concert" || { echo "STOPPED  openstage-concert"; exit 1; }
+
+  pm:status:
+    desc: Show product-manager worker status
+    cmds:
+      - tmux has-session -t openstage-pm 2>/dev/null && echo "RUNNING  openstage-pm" || { echo "STOPPED  openstage-pm"; exit 1; }
+
+  feature:status:
+    desc: Show feature worker status
+    cmds:
+      - tmux has-session -t openstage-feature 2>/dev/null && echo "RUNNING  openstage-feature" || { echo "STOPPED  openstage-feature"; exit 1; }
 
   workers:restart:
     desc: Stop, update isolated checkouts, and restart all workers
