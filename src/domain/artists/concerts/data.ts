@@ -441,6 +441,8 @@ export const concerts: readonly Concert[] = [
     },
     description:
       "A nine-song festival set from the Dead to the World tour, captured at the Butzweilerhof grounds during the 1997 Bizarre Festival.",
+    recordingNote:
+      "The event listing and Rockpalast archive place this performance on August 16, 1997; the submitted July 21 date was corrected.",
     setlist: [
       { title: "Intro", startAtSeconds: seconds("00:00") },
       { title: "Angel With the Scabbed Wings", startAtSeconds: seconds("02:40") },
