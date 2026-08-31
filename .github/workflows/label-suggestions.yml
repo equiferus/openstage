@@ -1,6 +1,11 @@
 name: Label suggestions
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/label-suggestions.yml
+  workflow_dispatch:
   issues:
     types: [opened]
 
@@ -9,42 +14,56 @@ permissions:
   issues: write
 
 jobs:
-  label:
-    if: startsWith(github.event.issue.title, '[Concert]:') || startsWith(github.event.issue.title, '[Feature]:')
+  ensure-labels:
     runs-on: ubuntu-latest
     steps:
-      - name: Create and apply suggestion label
+      - name: Create suggestion labels
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const labels = [
+              {
+                name: 'suggestion: concert',
+                color: 'd97706',
+                description: 'A concert proposed for the Openstage collection',
+              },
+              {
+                name: 'suggestion: feature',
+                color: '8b5cf6',
+                description: 'A proposed improvement to the Openstage app',
+              },
+            ]
+
+            for (const label of labels) {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ...label,
+                })
+              } catch (error) {
+                if (error.status !== 422) throw error
+              }
+            }
+
+  route-issue:
+    if: github.event_name == 'issues' && (startsWith(github.event.issue.title, '[Concert]:') || startsWith(github.event.issue.title, '[Feature]:'))
+    needs: ensure-labels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply suggestion label
         uses: actions/github-script@v9
         env:
           ISSUE_TITLE: ${{ github.event.issue.title }}
         with:
           script: |
-            const concert = process.env.ISSUE_TITLE.startsWith('[Concert]:')
-            const label = concert
-              ? {
-                  name: 'suggestion: concert',
-                  color: 'd97706',
-                  description: 'A concert proposed for the Openstage collection',
-                }
-              : {
-                  name: 'suggestion: feature',
-                  color: '8b5cf6',
-                  description: 'A proposed improvement to the Openstage app',
-                }
-
-            try {
-              await github.rest.issues.createLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ...label,
-              })
-            } catch (error) {
-              if (error.status !== 422) throw error
-            }
+            const label = process.env.ISSUE_TITLE.startsWith('[Concert]:')
+              ? 'suggestion: concert'
+              : 'suggestion: feature'
 
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              labels: [label.name],
+              labels: [label],
             })
