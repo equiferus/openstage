@@ -1,11 +1,20 @@
 import { describe, expect, test } from "bun:test"
 
-import { agentTimeoutMs, CONFIGS, parseAgentResponse, parseWorkerResult, selectIssue, type Role } from "./worker"
+import {
+  agentTimeoutMs,
+  CONFIGS,
+  parseAgentResponse,
+  parseDeliveryResponse,
+  parseDeliveryResult,
+  parseWorkerResult,
+  selectIssue,
+  type Role,
+} from "./worker"
 import { collectAgentResponse } from "./agent-runner"
-import type { GitHubIssue } from "./github"
+import type { GitHubIssue, GitHubPullRequest } from "./github"
 
 function issue(number: number, labels: string[]): GitHubIssue {
-  return { number, title: `Issue ${number}`, body: null, html_url: `https://example.test/${number}`, labels }
+  return { number, title: `Issue ${number}`, body: null, html_url: `https://example.test/${number}`, state: "open", labels }
 }
 
 function productReview(decision: string, staticOnly = "YES") {
@@ -28,6 +37,36 @@ Scope.
 
 ### Risks
 Risks.`
+}
+
+function deliveryReview(decision: string, staticOnly = "YES") {
+  return `## Delivery review
+
+### Decision
+${decision}
+
+### Verification
+Verified.
+
+### Scope and static architecture
+STATIC-ONLY: ${staticOnly}
+
+### Blocking findings
+None.
+
+### Risks
+None.`
+}
+
+const pull: GitHubPullRequest = {
+  number: 9,
+  title: "Implement issue",
+  html_url: "https://example.test/pull/9",
+  state: "open",
+  draft: false,
+  head: { ref: "issue/42-change", sha: "abc123" },
+  base: { ref: "main" },
+  body: "Closes #42",
 }
 
 describe("worker issue selection", () => {
@@ -96,7 +135,6 @@ describe("worker issue selection", () => {
   test.each([
     ["approved", "APPROVE"],
     ["rejected", "REJECT"],
-    ["needs-human-review", "NEEDS HUMAN REVIEW"],
   ] as const)("requires a structured PM comment for %s", (outcome, decision) => {
     const result = parseWorkerResult({ issue: 42, outcome, comment: productReview(decision) }, "pm", 42)
     expect(result.outcome).toBe(outcome)
@@ -126,6 +164,43 @@ describe("worker issue selection", () => {
       issue: 42,
       outcome: "needs-human-review",
       comment: productReview("NEEDS HUMAN REVIEW", "NO"),
-    }, "pm", 42)).toThrow("A non-static feature must be rejected")
+    }, "pm", 42)).toThrow("Invalid pm outcome")
+  })
+
+  test("does not permit the PM to defer a product decision", () => {
+    expect(() => parseWorkerResult({
+      issue: 42,
+      outcome: "needs-human-review",
+      comment: productReview("NEEDS HUMAN REVIEW"),
+    }, "pm", 42)).toThrow("Invalid pm outcome")
+  })
+
+  test("validates a commit-bound PM delivery decision", () => {
+    const decision = {
+      issue: 42,
+      pr: 9,
+      commit: "abc123",
+      outcome: "merge",
+      comment: deliveryReview("MERGE"),
+    }
+    expect(parseDeliveryResult(decision, 42, pull).outcome).toBe("merge")
+    expect(parseDeliveryResponse(`Review complete: ${JSON.stringify(decision)}`, 42, pull).outcome).toBe("merge")
+    expect(() => parseDeliveryResult({
+      issue: 42,
+      pr: 9,
+      commit: "stale",
+      outcome: "merge",
+      comment: deliveryReview("MERGE"),
+    }, 42, pull)).toThrow("commit must be abc123")
+  })
+
+  test("never permits a non-static delivery merge", () => {
+    expect(() => parseDeliveryResult({
+      issue: 42,
+      pr: 9,
+      commit: "abc123",
+      outcome: "merge",
+      comment: deliveryReview("MERGE", "NO"),
+    }, 42, pull)).toThrow("cannot be merged")
   })
 })

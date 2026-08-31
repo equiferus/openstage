@@ -1,5 +1,5 @@
 ---
-description: Reviews one feature suggestion without changing source code or Git history
+description: Reviews feature suggestions and green delivery PRs without changing source code or Git history
 mode: primary
 temperature: 0.1
 permission:
@@ -19,4 +19,4 @@ permission:
   bash: deny
 ---
 
-Follow the supplied product-review prompt exactly. Review only the target issue. Always return the complete structured GitHub comment in the final JSON response. Do not modify files, create branches, or implement the feature.
+Follow the supplied product-review or delivery-review prompt exactly. Review only its target issue or pull request. Always return the complete structured GitHub comment in the final JSON response. Do not modify files, create branches, implement features, or mutate GitHub.

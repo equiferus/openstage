@@ -40,7 +40,10 @@ jobs:
               { name: 'ready-for-production', color: '0e8a16', description: 'Approved and ready for implementation' },
               { name: 'implementation: working', color: '0052cc', description: 'Being implemented by automation' },
               { name: 'implementation: pr-opened', color: '5319e7', description: 'Implementation pull request is open' },
+              { name: 'implementation: changes-requested', color: 'd4c5f9', description: 'Returned to an implementation worker by the PM' },
               { name: 'implementation: blocked', color: 'b60205', description: 'Implementation is blocked' },
+              { name: 'implementation: merged', color: '6f42c1', description: 'Autonomously reviewed and merged by the PM' },
+              { name: 'pm: delivery-review', color: 'fbca04', description: 'Under autonomous PM delivery review' },
               { name: 'curation: rejected', color: 'd93f0b', description: 'Concert suggestion did not pass curation' },
               { name: 'curation: needs-info', color: 'fbca04', description: 'Concert suggestion needs more information' },
             ]

@@ -3,10 +3,10 @@
 Three unattended AI workers process suggestion issues through one provider-neutral runner:
 
 - `concert-curator` validates concert submissions and opens focused data PRs.
-- `product-manager` performs a read-only product review and approves, rejects, or requests human review.
+- `product-manager` is the autonomous orchestrator: it reviews suggestions, monitors implementation PRs and CI, performs a read-only delivery review, requests corrections, and merges approved work.
 - `feature-engineer` implements approved feature issues and opens PRs.
 
-Workers check GitHub every 5 minutes and process exactly one issue at a time per role. After finishing an item, a worker checks again immediately and drains its queue serially. PM approvals wake the feature worker immediately instead of waiting for its next poll. A role never starts another issue until its current agent run and all supervisor actions finish. Dirty partial work is always resumed before a newer queue item. Concert and feature agents follow the repository's `github-issue-delivery` skill and may push only `issue/*` branches. The trusted supervisor creates PRs from validated agent output; nothing pushes directly to or merges into `main`. Each worker gets an isolated Git worktree under `.worker-state/worktrees`, preventing concurrent agents from changing the same checkout.
+Workers check GitHub every 5 minutes and process exactly one item at a time per role. After finishing an item, a worker checks again immediately and drains its queue serially. PM approvals wake the feature worker, and new implementation PRs wake the PM. A role never starts another item until its current agent run and all supervisor actions finish. Dirty partial work is always resumed before a newer queue item. Concert and feature agents follow the repository's `github-issue-delivery` skill and may push only `issue/*` branches. The trusted supervisor creates PRs from validated agent output. Only the PM supervisor may squash-merge into `main`, and only after successful CI plus a commit-bound Luna-medium delivery review. Each worker gets an isolated Git worktree under `.worker-state/worktrees`, preventing concurrent agents from changing the same checkout.
 
 Agent runs are bounded so a confused model cannot occupy a queue forever: concert curation has an 8-minute deadline, PM review 5 minutes, and feature implementation 20 minutes. A timed-out run is stopped, its partial worktree changes are preserved, and the issue is retried serially after the cooldown. Advanced operators can override these with `WORKER_CONCERT_TIMEOUT_MS`, `WORKER_PM_TIMEOUT_MS`, and `WORKER_FEATURE_TIMEOUT_MS` (minimum 60000).
 
@@ -26,20 +26,21 @@ codex login
 codex login status
 ```
 
-Codex defaults to `gpt-5.6-luna` with low reasoning effort. To use OpenCode instead, authenticate it and set `USE_OPENCODE=true` in `.env`:
+Codex defaults to `gpt-5.6-luna` with low reasoning effort for concert and feature implementation. The PM defaults to `gpt-5.6-luna` with medium reasoning effort. To use OpenCode instead, authenticate it and set `USE_OPENCODE=true` in `.env`:
 
 ```sh
 opencode auth login
 opencode auth list
 ```
 
-Switching back requires only `USE_OPENCODE=false` followed by `task workers:restart`. Optional `CODEX_MODEL` and `CODEX_REASONING_EFFORT` variables let operators change the Codex model without editing source code.
+Switching back requires only `USE_OPENCODE=false` followed by `task workers:restart`. `CODEX_MODEL` and `CODEX_REASONING_EFFORT` control implementation workers. `CODEX_PM_MODEL` and `CODEX_PM_REASONING_EFFORT` independently control the PM and default to Luna medium.
 
 ## GitHub token
 
 Create a fine-grained personal access token scoped only to `equiferus/openstage` with:
 
-- Contents: read
+- Actions: read and write (inspect and rerun cancelled CI)
+- Contents: read and write (merge PRs and remove merged issue branches)
 - Issues: read and write
 - Pull requests: read and write
 - Metadata: read
@@ -100,7 +101,9 @@ Use `command -v task` for the exact Task binary path. tmux keeps the workers ava
 
 Transient labels (`automation: claimed`, `pm: reviewing`, and `implementation: working`) are separate from terminal outcomes. On startup, each worker releases stale claims left by an interrupted process. A failed run removes its claim, adds `automation: failed`, and comments with the error. New work is attempted first; failed work is retried after the five-minute cooldown when no new item is waiting. Use a role-specific `*:wake` task to interrupt an idle wait without restarting or losing unfinished files.
 
-The PM runs in a read-only sandbox. Codex implementation agents run in a workspace-write sandbox with automatic approval review; OpenCode retains its checked-in command allowlists. The concert agent uses the repository's bounded YouTube oEmbed helper instead of downloading and parsing huge watch pages. GitHub credentials are removed from every child process. Agents return a raw JSON final response through their provider's JSON event stream; the trusted Bun supervisor validates it and alone comments, labels, closes issues, and creates PRs. No worker merges its own pull request.
+The PM agent runs in a read-only sandbox. Codex implementation agents run in a workspace-write sandbox with automatic approval review; OpenCode retains its checked-in command allowlists. The concert agent uses the repository's bounded YouTube oEmbed helper instead of downloading and parsing huge watch pages. GitHub credentials are removed from every child process. Agents return raw JSON through their provider's event stream; the trusted Bun supervisor validates it and alone performs GitHub mutations.
+
+For every managed `issue/<number>-*` PR, the PM waits for the exact commit's `build` check. It reruns one cancelled workflow automatically, returns failed/conflicting/changes-requested work to the correct implementation worker, and reviews green diffs against the linked issue and static-only policy. A validated `MERGE` decision is posted on the PR before the supervisor squash-merges it, deletes the branch, and lets `Closes #N` close the issue. The PM therefore continues orchestrating delivery instead of stopping at an open PR. Product-review comments and delivery-review comments are mandatory and persisted on GitHub.
 
 Every successful PM outcome must contain the complete `## Product review` response. The supervisor posts that response before adding an approval/rejection label or closing the issue. If the PM agent fails to produce a valid review, the supervisor posts an automation-failure comment and leaves the product decision unapplied.
 

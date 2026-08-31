@@ -7,6 +7,7 @@ export type GitHubIssue = {
   title: string
   body: string | null
   html_url: string
+  state: "open" | "closed" | string
   labels: Array<GitHubLabel | string>
   pull_request?: unknown
 }
@@ -15,8 +16,30 @@ export type GitHubPullRequest = {
   number: number
   title: string
   html_url: string
-  head: { ref: string }
+  state: string
+  draft: boolean
+  mergeable?: boolean | null
+  mergeable_state?: string
+  head: { ref: string, sha: string }
+  base: { ref: string }
   body: string | null
+}
+
+export type GitHubCheckRun = {
+  id: number
+  name: string
+  status: "queued" | "in_progress" | "completed" | string
+  conclusion: string | null
+  details_url: string | null
+}
+
+export type GitHubPullRequestFile = {
+  filename: string
+  status: string
+  additions: number
+  deletions: number
+  changes: number
+  patch?: string
 }
 
 export const AUTOMATION_LABELS = [
@@ -30,7 +53,10 @@ export const AUTOMATION_LABELS = [
   { name: "ready-for-production", color: "0e8a16", description: "Approved and ready for implementation" },
   { name: "implementation: working", color: "0052cc", description: "Being implemented by automation" },
   { name: "implementation: pr-opened", color: "5319e7", description: "Implementation pull request is open" },
+  { name: "implementation: changes-requested", color: "d4c5f9", description: "Returned to an implementation worker by the PM" },
   { name: "implementation: blocked", color: "b60205", description: "Implementation is blocked" },
+  { name: "implementation: merged", color: "6f42c1", description: "Autonomously reviewed and merged by the PM" },
+  { name: "pm: delivery-review", color: "fbca04", description: "Under autonomous PM delivery review" },
   { name: "curation: rejected", color: "d93f0b", description: "Concert suggestion did not pass curation" },
   { name: "curation: needs-info", color: "fbca04", description: "Concert suggestion needs more information" },
 ] as const
@@ -101,6 +127,31 @@ export async function getIssueContext(number: number) {
   return { issue, comments, openPullRequests: relatedPullRequests }
 }
 
+export async function listOpenPullRequests() {
+  return github<GitHubPullRequest[]>("/pulls?state=open&sort=created&direction=asc&per_page=100")
+}
+
+export async function getPullRequest(number: number) {
+  return github<GitHubPullRequest>(`/pulls/${number}`)
+}
+
+export async function getPullRequestFiles(number: number) {
+  return github<GitHubPullRequestFile[]>(`/pulls/${number}/files?per_page=100`)
+}
+
+export async function getPullRequestComments(number: number) {
+  return github<Array<{ user: { login: string }, body: string | null, created_at: string }>>(
+    `/issues/${number}/comments?per_page=100`,
+  )
+}
+
+export async function getCheckRuns(ref: string) {
+  const response = await github<{ check_runs: GitHubCheckRun[] }>(
+    `/commits/${encodeURIComponent(ref)}/check-runs?filter=latest&per_page=100`,
+  )
+  return response.check_runs
+}
+
 export async function addLabels(number: number, labels: string[]) {
   return github(`/issues/${number}/labels`, {
     method: "POST",
@@ -131,10 +182,45 @@ export async function closeIssue(number: number) {
 }
 
 export async function createPullRequest(head: string, title: string, body: string) {
+  const existing = (await listOpenPullRequests()).find((pull) => pull.head.ref === head && pull.base.ref === "main")
+  if (existing) {
+    return github(`/pulls/${existing.number}`, {
+      method: "PATCH",
+      body: JSON.stringify({ title, body }),
+    })
+  }
   return github("/pulls", {
     method: "POST",
     body: JSON.stringify({ head, base: "main", title, body }),
   })
+}
+
+export async function mergePullRequest(number: number, sha: string) {
+  return github<{ merged: boolean, message: string, sha: string }>(`/pulls/${number}/merge`, {
+    method: "PUT",
+    body: JSON.stringify({ sha, merge_method: "squash" }),
+  })
+}
+
+export async function updatePullRequestBranch(number: number, sha: string) {
+  return github<{ message: string, url: string }>(`/pulls/${number}/update-branch`, {
+    method: "PUT",
+    body: JSON.stringify({ expected_head_sha: sha }),
+  })
+}
+
+export async function deleteBranch(branch: string) {
+  try {
+    await github(`/git/refs/heads/${branch.split("/").map(encodeURIComponent).join("/")}`, { method: "DELETE" })
+  } catch (error) {
+    if (!(error instanceof Error) || (!error.message.includes("GitHub 404") && !error.message.includes("GitHub 422"))) {
+      throw error
+    }
+  }
+}
+
+export async function rerunWorkflow(runId: number) {
+  return github(`/actions/runs/${runId}/rerun`, { method: "POST" })
 }
 
 export async function ensureLabels() {

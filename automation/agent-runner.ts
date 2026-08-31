@@ -40,8 +40,12 @@ export function agentCommand(options: RunnerOptions) {
     ]
   }
 
-  const model = options.environment.CODEX_MODEL?.trim() || "gpt-5.6-luna"
-  const reasoningEffort = options.environment.CODEX_REASONING_EFFORT?.trim() || "low"
+  const rolePrefix = `CODEX_${options.role.toUpperCase()}`
+  const model = options.environment[`${rolePrefix}_MODEL`]?.trim()
+    || options.environment.CODEX_MODEL?.trim()
+    || "gpt-5.6-luna"
+  const reasoningEffort = options.environment[`${rolePrefix}_REASONING_EFFORT`]?.trim()
+    || (options.role === "pm" ? "medium" : options.environment.CODEX_REASONING_EFFORT?.trim() || "low")
   const command = [
     "codex",
     "exec",

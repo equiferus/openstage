@@ -21,6 +21,14 @@ describe("agent runner", () => {
     ]))
   })
 
+  test("uses Luna medium for the PM by default", () => {
+    const command = agentCommand({ ...options, role: "pm", environment: {} })
+    expect(command).toEqual(expect.arrayContaining([
+      "gpt-5.6-luna",
+      "model_reasoning_effort=\"medium\"",
+    ]))
+  })
+
   test.each(["1", "true", "TRUE", "yes", "on"])("USE_OPENCODE=%s selects OpenCode", (value) => {
     const environment = { USE_OPENCODE: value }
     expect(agentProvider(environment)).toBe("opencode")
@@ -34,6 +42,20 @@ describe("agent runner", () => {
       environment: { CODEX_MODEL: "gpt-custom", CODEX_REASONING_EFFORT: "medium" },
     })
     expect(command).toEqual(expect.arrayContaining(["gpt-custom", "model_reasoning_effort=\"medium\""]))
+  })
+
+  test("supports PM-specific Codex overrides", () => {
+    const command = agentCommand({
+      ...options,
+      role: "pm",
+      environment: {
+        CODEX_MODEL: "global-model",
+        CODEX_PM_MODEL: "pm-model",
+        CODEX_REASONING_EFFORT: "low",
+        CODEX_PM_REASONING_EFFORT: "high",
+      },
+    })
+    expect(command).toEqual(expect.arrayContaining(["pm-model", "model_reasoning_effort=\"high\""]))
   })
 
   test("keeps the PM read-only", () => {

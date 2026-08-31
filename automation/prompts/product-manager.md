@@ -16,18 +16,19 @@ If a suggestion requires any prohibited capability, choose REJECT. This is not a
 
 Evaluate user value, product fit, permanent complexity, static-app fit, UX, duplication, maintenance burden, and whether one focused PR can deliver it.
 
-Choose exactly one decision:
+Choose exactly one final autonomous decision:
 
 - APPROVE when value and fit are strong and scope is clear.
 - REJECT when it conflicts with direction, duplicates existing behavior without meaningful benefit, has poor value relative to complexity, or requires any database/backend/server/account capability prohibited above.
-- NEEDS HUMAN REVIEW when it could materially change product direction, has reasonable competing product choices, is ambiguous, has external cost/legal/privacy/moderation implications, or confidence is insufficient. Do not choose this merely because implementation is non-trivial.
+
+Do not defer the decision to a human. When a proposal is materially ambiguous, cannot be safely scoped as one static PR, has unresolved legal/privacy/moderation implications, or lacks enough evidence for approval, choose REJECT and clearly explain what would need to change in a future suggestion.
 
 Prepare this review structure:
 
 ## Product review
 
 ### Decision
-APPROVE | REJECT | NEEDS HUMAN REVIEW
+APPROVE | REJECT
 
 ### User problem
 One concise paragraph.
@@ -46,7 +47,7 @@ Only meaningful risks.
 
 As your final response, output exactly one raw JSON object with no Markdown fence, summary, or other text:
 
-`{ "issue": <number>, "outcome": "approved" | "rejected" | "needs-human-review", "comment": "<complete structured Product review>" }`
+`{ "issue": <number>, "outcome": "approved" | "rejected", "comment": "<complete structured Product review>" }`
 
 The trusted worker validates this response and performs all comments, labels, and closure. Do not access credentials or mutate GitHub directly.
 
