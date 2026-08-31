@@ -93,6 +93,28 @@ function requiredString(value: unknown, field: string) {
   return value
 }
 
+function validateProductReview(commentBody: string, outcome: string) {
+  const requiredSections = [
+    "## Product review",
+    "### Decision",
+    "### User problem",
+    "### Assessment",
+    "### Implementation scope",
+    "### Risks",
+  ]
+  for (const section of requiredSections) {
+    if (!commentBody.includes(section)) throw new Error(`PM response is missing ${section}`)
+  }
+  const expectedDecision = outcome === "approved"
+    ? "APPROVE"
+    : outcome === "rejected"
+      ? "REJECT"
+      : "NEEDS HUMAN REVIEW"
+  if (!commentBody.includes(`### Decision\n${expectedDecision}`)) {
+    throw new Error(`PM response must state decision ${expectedDecision}`)
+  }
+}
+
 export function parseWorkerResult(value: unknown, role: Role, issueNumber: number): WorkerResult {
   if (!value || typeof value !== "object") throw new Error("Worker result must be a JSON object")
   const result = value as Record<string, unknown>
@@ -113,10 +135,12 @@ export function parseWorkerResult(value: unknown, role: Role, issueNumber: numbe
     if (!body.includes(`Closes #${issueNumber}`)) throw new Error(`PR body must contain Closes #${issueNumber}`)
     return { issue: issueNumber, outcome: "pr-opened", branch, title, body }
   }
+  const commentBody = requiredString(result.comment, "comment")
+  if (role === "pm") validateProductReview(commentBody, result.outcome)
   return {
     issue: issueNumber,
     outcome: result.outcome as ReviewResult["outcome"],
-    comment: requiredString(result.comment, "comment"),
+    comment: commentBody,
   }
 }
 
@@ -176,9 +200,9 @@ async function applyResult(role: Role, result: WorkerResult) {
 
 async function markFailed(role: Role, issue: GitHubIssue, error: unknown) {
   const message = error instanceof Error ? error.message : String(error)
+  await comment(issue.number, `Automation stopped before completing this issue.\n\nWorker: \`${role}\`\nError: \`${message.slice(0, 500)}\`\n\nRemove \`automation: failed\` after fixing the cause to retry.`)
   await addLabels(issue.number, ["automation: failed"])
   await removeLabel(issue.number, CONFIGS[role].claimLabel)
-  await comment(issue.number, `Automation stopped before completing this issue.\n\nWorker: \`${role}\`\nError: \`${message.slice(0, 500)}\`\n\nRemove \`automation: failed\` after fixing the cause to retry.`)
 }
 
 export async function cycle(role: Role, dryRun = false) {
@@ -217,7 +241,7 @@ async function main() {
   const role = roleFrom(Bun.argv[2])
   const once = args.has("--once") || args.has("--dry-run")
   const dryRun = args.has("--dry-run")
-  const interval = Number(Bun.env.WORKER_INTERVAL_MS ?? 3_600_000)
+  const interval = Number(Bun.env.WORKER_INTERVAL_MS ?? 900_000)
   if (!Number.isFinite(interval) || interval < 60_000) throw new Error("WORKER_INTERVAL_MS must be at least 60000")
 
   await preflight()
