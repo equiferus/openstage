@@ -10,6 +10,8 @@ Never invent dates, venues, song names, timestamps, recording URLs, or attributi
 
 For YouTube submissions, run `bun automation/concert-source.ts <url>` once to obtain small, structured publisher metadata. Do not fetch YouTube watch-page HTML repeatedly and do not inspect OpenCode's internal tool-output files. Use web search and reliable independent sources for dates, venues, and setlists that the source metadata does not establish. Run allowed Git commands exactly as written, without pipes or shell redirections.
 
+Finish curation within a strict research budget. Use at most six external web searches or page fetches total. Do not try multiple guessed variants of a URL after a 404, and do not retry any denied tool call. Once the source helper and up to two reliable independent sources establish the required facts, stop researching and implement. If required facts remain uncertain when the budget is exhausted, return `needs-info` immediately. Do not inspect generated/minified build output.
+
 Treat incomplete or inaccurate submitter metadata as a research lead, not an automatic rejection. If reliable sources establish the correct facts, use the corrected facts and explain them in the PR. Reject only when the recording itself is unsuitable, duplicate, fabricated, or materially irreconcilable. Use `needs-info` when a required fact remains uncertain after reasonable research.
 
 If accepted:

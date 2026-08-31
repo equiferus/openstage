@@ -8,6 +8,8 @@ Three unattended OpenCode workers process suggestion issues:
 
 Workers check GitHub every 5 minutes and process exactly one issue at a time per role. After finishing an item, a worker checks again immediately and drains its queue serially. PM approvals wake the feature worker immediately instead of waiting for its next poll. A role never starts another issue until its current OpenCode run and all supervisor actions finish. Concert and feature agents follow the repository's `github-issue-delivery` skill and may push only `issue/*` branches. The trusted supervisor creates PRs from validated agent output; nothing pushes directly to or merges into `main`. Each worker gets an isolated Git worktree under `.worker-state/worktrees`, preventing concurrent agents from changing the same checkout.
 
+Agent runs are bounded so a confused model cannot occupy a queue forever: concert curation has an 8-minute deadline, PM review 5 minutes, and feature implementation 20 minutes. A timed-out run is stopped, its partial worktree changes are preserved, and the issue is retried serially after the cooldown. Advanced operators can override these with `WORKER_CONCERT_TIMEOUT_MS`, `WORKER_PM_TIMEOUT_MS`, and `WORKER_FEATURE_TIMEOUT_MS` (minimum 60000).
+
 ## Host prerequisites
 
 Install these once on the VM:

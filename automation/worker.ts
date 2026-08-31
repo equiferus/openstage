@@ -22,6 +22,7 @@ type RoleConfig = {
   terminalLabels: string[]
   prompt: string
   agent: string
+  timeoutMs: number
 }
 
 export const CONFIGS: Record<Role, RoleConfig> = {
@@ -32,6 +33,7 @@ export const CONFIGS: Record<Role, RoleConfig> = {
     terminalLabels: ["implementation: pr-opened", "curation: rejected", "curation: needs-info"],
     prompt: "automation/prompts/concert.md",
     agent: "concert-curator",
+    timeoutMs: 8 * 60_000,
   },
   pm: {
     sourceLabel: "suggestion: feature",
@@ -40,6 +42,7 @@ export const CONFIGS: Record<Role, RoleConfig> = {
     terminalLabels: ["pm: rejected", "pm: needs-human-review", "ready-for-production"],
     prompt: "automation/prompts/product-manager.md",
     agent: "product-manager",
+    timeoutMs: 5 * 60_000,
   },
   feature: {
     sourceLabel: "ready-for-production",
@@ -48,6 +51,7 @@ export const CONFIGS: Record<Role, RoleConfig> = {
     terminalLabels: ["implementation: pr-opened", "implementation: blocked"],
     prompt: "automation/prompts/feature.md",
     agent: "feature-engineer",
+    timeoutMs: 20 * 60_000,
   },
 }
 
@@ -263,6 +267,27 @@ export async function collectAgentResponse(stream: ReadableStream<Uint8Array>) {
   return finalResponse
 }
 
+export function agentTimeoutMs(role: Role, environment: Record<string, string | undefined> = Bun.env) {
+  const key = `WORKER_${role.toUpperCase()}_TIMEOUT_MS`
+  const timeout = Number(environment[key] ?? CONFIGS[role].timeoutMs)
+  if (!Number.isFinite(timeout) || timeout < 60_000) {
+    throw new Error(`${key} must be at least 60000`)
+  }
+  return timeout
+}
+
+async function stopAgent(child: ReturnType<typeof Bun.spawn>) {
+  child.kill()
+  const stopped = await Promise.race([
+    child.exited.then(() => true),
+    Bun.sleep(5_000).then(() => false),
+  ])
+  if (!stopped) {
+    child.kill(9)
+    await child.exited
+  }
+}
+
 async function runAgent(role: Role, issue: GitHubIssue) {
   const config = CONFIGS[role]
   const repositoryRoot = `${import.meta.dir}/..`
@@ -284,10 +309,24 @@ async function runAgent(role: Role, issue: GitHubIssue) {
     `Openstage ${role} #${issue.number}`,
     prompt,
   ], { stdin: "inherit", stdout: "pipe", stderr: "inherit", env: safeEnvironment })
-  const response = await collectAgentResponse(child.stdout)
-  const exitCode = await child.exited
-  if (exitCode !== 0) throw new Error(`OpenCode exited with ${exitCode}`)
-  return parseAgentResponse(response, role, issue.number)
+  const timeout = agentTimeoutMs(role)
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  const deadline = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(
+      `OpenCode exceeded the ${Math.round(timeout / 60_000)}-minute ${role} deadline; partial work was preserved for retry`,
+    )), timeout)
+  })
+  try {
+    const response = await Promise.race([collectAgentResponse(child.stdout), deadline])
+    const exitCode = await Promise.race([child.exited, deadline])
+    if (exitCode !== 0) throw new Error(`OpenCode exited with ${exitCode}`)
+    return parseAgentResponse(response, role, issue.number)
+  } catch (error) {
+    if (child.exitCode === null) await stopAgent(child)
+    throw error
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId)
+  }
 }
 
 async function applyResult(role: Role, result: WorkerResult) {

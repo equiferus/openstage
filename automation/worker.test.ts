@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 
-import { collectAgentResponse, CONFIGS, parseAgentResponse, parseWorkerResult, selectIssue, type Role } from "./worker"
+import { agentTimeoutMs, collectAgentResponse, CONFIGS, parseAgentResponse, parseWorkerResult, selectIssue, type Role } from "./worker"
 import type { GitHubIssue } from "./github"
 
 function issue(number: number, labels: string[]): GitHubIssue {
@@ -40,6 +40,13 @@ describe("worker issue selection", () => {
 
   test("each role defines at least one terminal state", () => {
     for (const config of Object.values(CONFIGS)) expect(config.terminalLabels.length).toBeGreaterThan(0)
+  })
+
+  test("uses bounded role-specific runtimes with validated environment overrides", () => {
+    expect(agentTimeoutMs("concert", {})).toBe(8 * 60_000)
+    expect(agentTimeoutMs("pm", { WORKER_PM_TIMEOUT_MS: "90000" })).toBe(90_000)
+    expect(() => agentTimeoutMs("feature", { WORKER_FEATURE_TIMEOUT_MS: "invalid" })).toThrow("WORKER_FEATURE_TIMEOUT_MS")
+    expect(() => agentTimeoutMs("feature", { WORKER_FEATURE_TIMEOUT_MS: "59999" })).toThrow("at least 60000")
   })
 
   test("prioritizes new work but retries failed work when the queue is otherwise empty", () => {

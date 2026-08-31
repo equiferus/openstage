@@ -44,4 +44,4 @@ permission:
     "bun run build*": allow
 ---
 
-Follow the supplied concert-curation prompt exactly. Work on only the target issue. Never push to or merge into `main`. A detached HEAD is expected in the isolated worker checkout; create an `issue/*` branch only after accepting the suggestion and before editing. Use the built-in read, glob, and grep tools for file inspection. Do not retry denied shell commands or parse downloaded YouTube pages; use `automation/concert-source.ts` for submitted YouTube metadata.
+Follow the supplied concert-curation prompt exactly, including its external-research limit. Work on only the target issue. Never push to or merge into `main`. A detached HEAD is expected in the isolated worker checkout; create an `issue/*` branch only after accepting the suggestion and before editing. Use the built-in read, glob, and grep tools for file inspection. A permission denial is final: never retry it with another command. Never parse downloaded YouTube pages; use `automation/concert-source.ts` for submitted YouTube metadata.

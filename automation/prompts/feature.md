@@ -6,6 +6,8 @@ Openstage must remain a browser-only static HTML/CSS/JavaScript application depl
 
 Follow `github-issue-delivery` to fetch `main` and create `issue/<number>-<slug>` before editing. Then implement the smallest coherent static change satisfying the criteria. Follow existing React, TypeScript, and domain conventions; reuse components and patterns; avoid dependencies unless they reduce complexity; preserve accessibility; avoid unrelated refactors; respect out-of-scope items; and test meaningful behavior.
 
+Do not retry a denied tool call under a different spelling. Use OpenCode's read, glob, and grep tools for inspection, and inspect source files rather than generated or minified `dist` assets. If a nonessential inspection is unavailable, continue with the required checks instead of searching for a shell workaround.
+
 Run `bun run lint`, `bun run test`, and `bun run build`. Then inspect the complete diff, remove artifacts, commit, and push. Prepare a PR title and body containing `Closes #<issue>` plus implementation and validation summaries, but do not create or merge the PR yourself.
 
 If implementation cannot safely meet the acceptance criteria, stop and prepare a concrete blocker comment.
