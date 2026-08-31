@@ -39,7 +39,7 @@ Switching back requires only `USE_OPENCODE=false` followed by `task workers:rest
 
 Create a fine-grained personal access token scoped only to `equiferus/openstage` with:
 
-- Actions: read and write (inspect and rerun cancelled CI)
+- Actions: read (inspect CI)
 - Contents: read and write (merge PRs and remove merged issue branches)
 - Issues: read and write
 - Pull requests: read and write
@@ -103,7 +103,7 @@ Transient labels (`automation: claimed`, `pm: reviewing`, and `implementation: w
 
 The PM agent runs in a read-only sandbox. Codex implementation agents run in a workspace-write sandbox with automatic approval review; OpenCode retains its checked-in command allowlists. The concert agent uses the repository's bounded YouTube oEmbed helper instead of downloading and parsing huge watch pages. GitHub credentials are removed from every child process. Agents return raw JSON through their provider's event stream; the trusted Bun supervisor validates it and alone performs GitHub mutations.
 
-For every managed `issue/<number>-*` PR, the PM waits for the exact commit's `build` check. It reruns one cancelled workflow automatically, returns failed/conflicting/changes-requested work to the correct implementation worker, and reviews green diffs against the linked issue and static-only policy. A validated `MERGE` decision is posted on the PR before the supervisor squash-merges it, deletes the branch, and lets `Closes #N` close the issue. The PM therefore continues orchestrating delivery instead of stopping at an open PR. Product-review comments and delivery-review comments are mandatory and persisted on GitHub.
+For every managed `issue/<number>-*` PR, the PM waits for the exact commit's `build` check. It retriggers cancelled checks once, returns failed/conflicting/changes-requested work to the correct implementation worker, and reviews green diffs against the linked issue and static-only policy. A validated `MERGE` decision is posted on the PR before the supervisor squash-merges it, deletes the branch, and lets `Closes #N` close the issue. The PM therefore continues orchestrating delivery instead of stopping at an open PR. Product-review comments and delivery-review comments are mandatory and persisted on GitHub.
 
 Every successful PM outcome must contain the complete `## Product review` response. The supervisor posts that response before adding an approval/rejection label or closing the issue. If the PM agent fails to produce a valid review, the supervisor posts an automation-failure comment and leaves the product decision unapplied.
 

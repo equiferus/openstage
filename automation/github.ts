@@ -219,8 +219,15 @@ export async function deleteBranch(branch: string) {
   }
 }
 
-export async function rerunWorkflow(runId: number) {
-  return github(`/actions/runs/${runId}/rerun`, { method: "POST" })
+export async function retriggerPullRequestChecks(number: number) {
+  await github(`/pulls/${number}`, {
+    method: "PATCH",
+    body: JSON.stringify({ state: "closed" }),
+  })
+  return github(`/pulls/${number}`, {
+    method: "PATCH",
+    body: JSON.stringify({ state: "open" }),
+  })
 }
 
 export async function ensureLabels() {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 
-import { deliveryCheckState, linkedIssueNumber, pullRequestPatch, workflowRunId } from "./delivery"
+import { deliveryCheckState, linkedIssueNumber, pullRequestPatch } from "./delivery"
 import type { GitHubCheckRun, GitHubPullRequest } from "./github"
 
 function pull(overrides: Partial<GitHubPullRequest> = {}): GitHubPullRequest {
@@ -42,11 +42,6 @@ describe("delivery orchestration", () => {
     expect(deliveryCheckState([check()])).toBe("passed")
     expect(deliveryCheckState([check({ conclusion: "cancelled" })])).toBe("cancelled")
     expect(deliveryCheckState([check({ conclusion: "failure" })])).toBe("failed")
-  })
-
-  test("extracts a workflow run id from check details", () => {
-    expect(workflowRunId([check()])).toBe(123)
-    expect(workflowRunId([check({ details_url: null })])).toBeNull()
   })
 
   test("bounds patch context supplied to the PM", () => {

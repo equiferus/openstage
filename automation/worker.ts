@@ -17,7 +17,7 @@ import {
   listOpenPullRequests,
   mergePullRequest,
   removeLabel,
-  rerunWorkflow,
+  retriggerPullRequestChecks,
   type GitHubIssue,
   type GitHubPullRequest,
   updatePullRequestBranch,
@@ -28,7 +28,7 @@ import {
   collectAgentResponse,
   requiredAgentCommand,
 } from "./agent-runner"
-import { deliveryCheckState, linkedIssueNumber, pullRequestPatch, workflowRunId } from "./delivery"
+import { deliveryCheckState, linkedIssueNumber, pullRequestPatch } from "./delivery"
 import { signalWorkerWake, waitForWorkerWake } from "./wake"
 
 export type Role = "concert" | "pm" | "feature"
@@ -519,14 +519,9 @@ async function orchestrateDeliveries() {
       const comments = await getPullRequestComments(pull.number)
       const marker = `<!-- openstage-ci-rerun:${pull.head.sha} -->`
       if (!comments.some((entry) => entry.body?.includes(marker))) {
-        const runId = workflowRunId(checkRuns)
-        if (!runId) {
-          await returnToImplementation(issue, pull, "Blocking finding: CI was cancelled and its workflow run could not be identified.")
-          return true
-        }
-        await rerunWorkflow(runId)
-        await comment(pull.number, `${marker}\nThe PM detected cancelled CI and automatically requested one rerun for this commit.`)
-        console.log(`PM requested CI rerun ${runId} for PR #${pull.number}`)
+        await retriggerPullRequestChecks(pull.number)
+        await comment(pull.number, `${marker}\nThe PM detected cancelled CI and automatically retriggered checks for this commit.`)
+        console.log(`PM retriggered CI for PR #${pull.number}`)
         return false
       }
       await returnToImplementation(issue, pull, "Blocking finding: CI remained cancelled after an automatic rerun.")

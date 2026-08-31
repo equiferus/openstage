@@ -18,14 +18,6 @@ export function deliveryCheckState(checkRuns: GitHubCheckRun[]): DeliveryCheckSt
   return "failed"
 }
 
-export function workflowRunId(checkRuns: GitHubCheckRun[]) {
-  for (const check of checkRuns) {
-    const match = /\/actions\/runs\/(\d+)(?:\/|$)/.exec(check.details_url ?? "")
-    if (match) return Number(match[1])
-  }
-  return null
-}
-
 export function pullRequestPatch(files: GitHubPullRequestFile[], maxCharacters = 120_000) {
   let remaining = maxCharacters
   const sections: string[] = []
