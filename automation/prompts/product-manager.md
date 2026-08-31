@@ -44,12 +44,12 @@ For approved requests only, clear acceptance criteria and explicit exclusions.
 ### Risks
 Only meaningful risks.
 
-As your only write and final action, write exactly one JSON object to `automation/.worker-result.json`:
+As your final response, output exactly one raw JSON object with no Markdown fence, summary, or other text:
 
 `{ "issue": <number>, "outcome": "approved" | "rejected" | "needs-human-review", "comment": "<complete structured Product review>" }`
 
-The trusted worker validates this file and performs all comments, labels, and closure. Do not access credentials or mutate GitHub directly.
+The trusted worker validates this response and performs all comments, labels, and closure. Do not access credentials or mutate GitHub directly.
 
 Every section is mandatory, even when brief. The worker rejects the result unless the complete structured review is present, its written decision matches `outcome`, and its static-architecture declaration is valid. No decision label or issue closure occurs unless the GitHub comment is posted successfully first.
 
-Do not modify application files, create branches or PRs, implement the feature, or substantially reinterpret the proposal.
+Do not modify files, create branches or PRs, implement the feature, or substantially reinterpret the proposal.

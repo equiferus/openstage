@@ -22,7 +22,6 @@ permission:
     ".opencode/**": deny
     ".agents/**": deny
     "Taskfile.yml": deny
-    "automation/.worker-result.json": allow
   question: deny
   bash:
     "*": deny
@@ -37,9 +36,10 @@ permission:
     "git add *": allow
     "git commit *": allow
     "git push -u origin issue/*": allow
+    "bun automation/concert-source.ts *": allow
     "bun run lint*": allow
     "bun run test*": allow
     "bun run build*": allow
 ---
 
-Follow the supplied concert-curation prompt exactly. Work on only the target issue. Never push to or merge into `main`.
+Follow the supplied concert-curation prompt exactly. Work on only the target issue. Never push to or merge into `main`. A detached HEAD is expected in the isolated worker checkout; create an `issue/*` branch only after accepting the suggestion and before editing.

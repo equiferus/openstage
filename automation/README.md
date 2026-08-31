@@ -6,7 +6,7 @@ Three unattended OpenCode workers process suggestion issues:
 - `product-manager` performs a read-only product review and approves, rejects, or requests human review.
 - `feature-engineer` implements approved feature issues and opens PRs.
 
-Workers check GitHub every 15 minutes and process at most one issue per role per cycle. Concert and feature agents follow the repository's `github-issue-delivery` skill and may push only `issue/*` branches. The trusted supervisor creates PRs from validated agent output; nothing pushes directly to or merges into `main`. Each worker gets an isolated Git worktree under `.worker-state/worktrees`, preventing concurrent agents from changing the same checkout.
+Workers check GitHub every 5 minutes and process exactly one issue at a time per role. A role never starts another issue until its current OpenCode run and all supervisor actions finish. Concert and feature agents follow the repository's `github-issue-delivery` skill and may push only `issue/*` branches. The trusted supervisor creates PRs from validated agent output; nothing pushes directly to or merges into `main`. Each worker gets an isolated Git worktree under `.worker-state/worktrees`, preventing concurrent agents from changing the same checkout.
 
 ## Host prerequisites
 
@@ -28,7 +28,7 @@ opencode auth list
 
 Create a fine-grained personal access token scoped only to `equiferus/openstage` with:
 
-- Contents: read and write
+- Contents: read
 - Issues: read and write
 - Pull requests: read and write
 - Metadata: read
@@ -85,7 +85,7 @@ Use `command -v task` for the exact Task binary path. tmux keeps the workers ava
 
 Transient labels (`automation: claimed`, `pm: reviewing`, and `implementation: working`) are separate from terminal outcomes. A failed run removes its claim, adds `automation: failed`, and comments with the error. Fix the cause and remove `automation: failed` to retry.
 
-The PM cannot edit application files or run shell commands; it can write only the ignored worker-result file. Implementation agents can edit application code and run only checked-in Git and Bun command patterns. GitHub credentials are removed from every OpenCode child process. Agents return a validated JSON decision to the trusted Bun supervisor, which alone comments, labels, closes issues, and creates PRs. No worker merges its own pull request.
+The PM cannot edit files or run shell commands. Implementation agents can edit application code and run only checked-in Git and Bun command patterns. The concert agent uses the repository's bounded YouTube oEmbed helper instead of downloading and parsing huge watch pages. GitHub credentials are removed from every OpenCode child process. Agents return a raw JSON final response through OpenCode's JSON event stream; the trusted Bun supervisor validates it and alone comments, labels, closes issues, and creates PRs. No worker merges its own pull request.
 
 Every successful PM outcome must contain the complete `## Product review` response. The supervisor posts that response before adding an approval/rejection label or closing the issue. If the PM agent fails to produce a valid review, the supervisor posts an automation-failure comment and leaves the product decision unapplied.
 

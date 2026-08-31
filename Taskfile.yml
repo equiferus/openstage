@@ -54,7 +54,7 @@ tasks:
         done
 
   workers:start:
-    desc: Start all three 15-minute workers in isolated tmux sessions
+    desc: Start all three 5-minute workers in isolated tmux sessions
     cmds:
       - task: workers:setup
       - task: concert:run
