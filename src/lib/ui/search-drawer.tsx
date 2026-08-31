@@ -99,7 +99,7 @@ export function SearchDrawer({ onSelectConcert }: SearchDrawerProps) {
           <span className="hidden sm:inline">Search</span>
         </Button>
       </SheetTrigger>
-      <SheetContent>
+      <SheetContent closeLabel="Close search">
         <div className="border-b border-white/8 px-5 py-6 pr-16 sm:px-7">
           <SheetHeader>
             <SheetTitle>Search Openstage</SheetTitle>

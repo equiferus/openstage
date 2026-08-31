@@ -1,0 +1,50 @@
+name: Label suggestions
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  label:
+    if: startsWith(github.event.issue.title, '[Concert]:') || startsWith(github.event.issue.title, '[Feature]:')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create and apply suggestion label
+        uses: actions/github-script@v9
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        with:
+          script: |
+            const concert = process.env.ISSUE_TITLE.startsWith('[Concert]:')
+            const label = concert
+              ? {
+                  name: 'suggestion: concert',
+                  color: 'd97706',
+                  description: 'A concert proposed for the Openstage collection',
+                }
+              : {
+                  name: 'suggestion: feature',
+                  color: '8b5cf6',
+                  description: 'A proposed improvement to the Openstage app',
+                }
+
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ...label,
+              })
+            } catch (error) {
+              if (error.status !== 422) throw error
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [label.name],
+            })

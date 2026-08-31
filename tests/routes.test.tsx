@@ -66,6 +66,24 @@ describe("Openstage single-page catalog", () => {
     expect(window.location.hash).toBe("#/?concert=rufus-du-sol-live-joshua-tree")
   })
 
+  it("routes concert and feature suggestions to separate issue forms", async () => {
+    const user = userEvent.setup()
+    window.location.hash = "#/"
+    render(<Routes />)
+
+    await user.click(screen.getAllByRole("button", { name: "Suggest" })[0])
+
+    expect(screen.getByRole("dialog", { name: "What would you like to suggest?" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /Add a concert/ })).toHaveAttribute(
+      "href",
+      "https://github.com/equiferus/openstage/issues/new?template=recording-suggestion.yml",
+    )
+    expect(screen.getByRole("link", { name: /Suggest an app feature/ })).toHaveAttribute(
+      "href",
+      "https://github.com/equiferus/openstage/issues/new?template=feature-suggestion.yml",
+    )
+  })
+
   it("selects an artist search result through its primary concert", async () => {
     const user = userEvent.setup()
     window.location.hash = "#/"

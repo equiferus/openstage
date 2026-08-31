@@ -1,0 +1,49 @@
+name: App feature suggestion
+description: Suggest a new capability or improvement for the Openstage app.
+title: "[Feature]: "
+labels:
+  - "suggestion: feature"
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve Openstage. Feature suggestions are reviewed independently from concert submissions.
+  - type: input
+    id: summary
+    attributes:
+      label: Feature summary
+      description: Describe the feature in one clear sentence.
+      placeholder: Add a way to...
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What is difficult today, and who would benefit from changing it?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed experience
+      description: Explain how you imagine the feature working.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Discovery and search
+        - Concert playback
+        - Setlists and metadata
+        - Suggestions and curation
+        - Accessibility
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add examples, screenshots, alternatives, or anything else that may help.

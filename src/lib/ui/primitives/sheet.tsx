@@ -25,7 +25,12 @@ function SheetOverlay({ className, ...props }: React.ComponentProps<typeof Dialo
   )
 }
 
-function SheetContent({ className, children, ...props }: React.ComponentProps<typeof DialogPrimitive.Content>) {
+function SheetContent({
+  className,
+  children,
+  closeLabel = "Close panel",
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Content> & { closeLabel?: string }) {
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -39,7 +44,7 @@ function SheetContent({ className, children, ...props }: React.ComponentProps<ty
         {children}
         <DialogPrimitive.Close className="absolute top-4 right-4 flex size-9 items-center justify-center rounded-full text-zinc-400 outline-none transition hover:bg-white/8 hover:text-white focus-visible:ring-2 focus-visible:ring-amber-400">
           <X className="size-4" aria-hidden="true" />
-          <span className="sr-only">Close search</span>
+          <span className="sr-only">{closeLabel}</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </SheetPortal>

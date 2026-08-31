@@ -13,9 +13,9 @@ Openstage brings full live performances, event details, and setlists together in
 - Shareable concert links
 - Fully static: no accounts, database, or backend
 
-## 🎟️ Suggest a concert
+## 🎟️ Make a suggestion
 
-Found a performance that belongs here? Select **Suggest a recording** on the [website](https://equiferus.github.io/openstage/), then provide the artist, recording URL, event details, and setlist if available. This creates a structured GitHub suggestion for review.
+Select **+ Suggest** on the [website](https://equiferus.github.io/openstage/) to add a concert or propose an app feature. Each choice opens a separate structured GitHub issue form and is routed to its own labeled review queue.
 
 Prefer to contribute the change yourself? Fork the repository, add the artist or concert to the appropriate `data.ts` file under `src/domain/artists`, run the checks below, and open a pull request.
 
