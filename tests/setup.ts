@@ -2,6 +2,13 @@ import "@testing-library/jest-dom/vitest"
 import { cleanup } from "@testing-library/react"
 import { afterEach, vi } from "vitest"
 
+if (!document.querySelector('meta[name="theme-color"]')) {
+  const themeColorMeta = document.createElement("meta")
+  themeColorMeta.setAttribute("name", "theme-color")
+  themeColorMeta.setAttribute("content", "#09090b")
+  document.head.appendChild(themeColorMeta)
+}
+
 afterEach(() => {
   cleanup()
   window.location.hash = ""

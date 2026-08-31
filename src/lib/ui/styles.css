@@ -13,9 +13,51 @@
   color-scheme: dark;
   --background: #09090b;
   --foreground: #fafafa;
+  --surface: #09090b;
+  --surface-elevated: #18181b;
+  --surface-header: rgb(9 9 11 / 0.8);
+  --text-primary: #fafafa;
+  --text-muted: #a1a1aa;
+  --text-subtle: #71717a;
+  --text-faint: #52525b;
+  --text-on-amber: #09090b;
+  --border-subtle: rgb(255 255 255 / 0.08);
+  --border-default: rgb(255 255 255 / 0.1);
+  --border-strong: rgb(255 255 255 / 0.3);
+  --grid-line: rgb(255 255 255 / 0.025);
+  --ambient-amber: rgb(245 158 11 / 0.11);
+  --ambient-amber-deep: rgb(180 83 9 / 0.07);
+  --hover-surface: rgb(255 255 255 / 0.08);
+  --selection-bg: rgb(251 191 36 / 0.35);
+  --selection-fg: #ffffff;
+  --overlay-bg: rgb(0 0 0 / 0.7);
   font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --background: #fafaf9;
+  --foreground: #18181b;
+  --surface: #fafaf9;
+  --surface-elevated: #ffffff;
+  --surface-header: rgb(250 250 249 / 0.85);
+  --text-primary: #18181b;
+  --text-muted: #52525b;
+  --text-subtle: #71717a;
+  --text-faint: #a1a1aa;
+  --text-on-amber: #18181b;
+  --border-subtle: rgb(24 24 27 / 0.08);
+  --border-default: rgb(24 24 27 / 0.1);
+  --border-strong: rgb(24 24 27 / 0.25);
+  --grid-line: rgb(24 24 27 / 0.04);
+  --ambient-amber: rgb(245 158 11 / 0.18);
+  --ambient-amber-deep: rgb(180 83 9 / 0.12);
+  --hover-surface: rgb(24 24 27 / 0.06);
+  --selection-bg: rgb(245 158 11 / 0.35);
+  --selection-fg: #18181b;
+  --overlay-bg: rgb(24 24 27 / 0.45);
 }
 
 @keyframes accordion-down {
@@ -36,6 +78,7 @@ html {
   min-width: 320px;
   scroll-behavior: smooth;
   background: var(--background);
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 body {
@@ -43,22 +86,24 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(circle at 78% -10%, rgb(245 158 11 / 0.11), transparent 34rem),
-    radial-gradient(circle at 5% 32%, rgb(180 83 9 / 0.07), transparent 28rem),
+    radial-gradient(circle at 78% -10%, var(--ambient-amber), transparent 34rem),
+    radial-gradient(circle at 5% 32%, var(--ambient-amber-deep), transparent 28rem),
     var(--background);
   color: var(--foreground);
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 body::before {
   position: fixed;
   z-index: -1;
   inset: 0;
-  background-image: linear-gradient(rgb(255 255 255 / 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.025) 1px, transparent 1px);
+  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 72px 72px;
   mask-image: linear-gradient(to bottom, black, transparent 65%);
   content: "";
   pointer-events: none;
+  transition: background-image 200ms ease;
 }
 
 button,
@@ -67,8 +112,8 @@ a {
 }
 
 ::selection {
-  background: rgb(251 191 36 / 0.35);
-  color: white;
+  background: var(--selection-bg);
+  color: var(--selection-fg);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -79,5 +124,114 @@ a {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Light-theme overrides for Tailwind utility classes used throughout the app.
+   Tailwind v4 utilities live inside @layer utilities; unlayered rules win by
+   specificity and order, so we re-style the dark classes for the light theme. */
+:root[data-theme="light"] {
+  /* Backgrounds */
+  .bg-zinc-950 {
+    background-color: var(--surface-elevated);
+  }
+  .bg-zinc-950\/80 {
+    background-color: var(--surface-header);
+  }
+  .bg-zinc-950\/90 {
+    background-color: var(--surface-header);
+  }
+  .bg-zinc-900 {
+    background-color: var(--surface-elevated);
+  }
+  .bg-zinc-900\/70 {
+    background-color: var(--surface-elevated);
+  }
+  .bg-black\/50 {
+    background-color: var(--surface-elevated);
+  }
+  .bg-black\/20 {
+    background-color: var(--surface-elevated);
+  }
+  .bg-black\/60 {
+    background-color: var(--surface-elevated);
+  }
+  .bg-black\/70 {
+    background-color: var(--overlay-bg);
+  }
+  .bg-white\/\[0\.025\] {
+    background-color: var(--surface-elevated);
+  }
+  .bg-white\/5 {
+    background-color: var(--hover-surface);
+  }
+  .bg-white\/8 {
+    background-color: var(--hover-surface);
+  }
+  .bg-white\/10 {
+    background-color: var(--hover-surface);
+  }
+  .bg-white\/15 {
+    background-color: var(--hover-surface);
+  }
+
+  /* Borders */
+  .border-white\/8 {
+    border-color: var(--border-subtle);
+  }
+  .border-white\/10 {
+    border-color: var(--border-default);
+  }
+  .border-white\/15 {
+    border-color: var(--border-default);
+  }
+  .divide-white\/8 > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--border-subtle);
+  }
+
+  /* Text */
+  .text-white {
+    color: var(--text-primary);
+  }
+  .text-zinc-100 {
+    color: var(--text-primary);
+  }
+  .text-zinc-200 {
+    color: var(--text-primary);
+  }
+  .text-zinc-300 {
+    color: var(--text-muted);
+  }
+  .text-zinc-400 {
+    color: var(--text-muted);
+  }
+  .text-zinc-500 {
+    color: var(--text-subtle);
+  }
+  .text-zinc-600 {
+    color: var(--text-faint);
+  }
+  .text-zinc-700 {
+    color: var(--text-faint);
+  }
+
+  /* Hover states */
+  .hover\:bg-white\/5:hover {
+    background-color: var(--hover-surface);
+  }
+  .hover\:bg-white\/8:hover {
+    background-color: var(--hover-surface);
+  }
+  .hover\:border-white\/30:hover {
+    border-color: var(--border-strong);
+  }
+  .group:hover .group-hover\:bg-zinc-900 {
+    background-color: var(--surface-elevated);
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: var(--selection-bg);
+    color: var(--selection-fg);
   }
 }

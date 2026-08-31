@@ -15,6 +15,23 @@
     />
     <meta property="og:type" content="website" />
     <title>Openstage — remarkable concerts, one stage</title>
+    <script>
+      (function () {
+        try {
+          var stored = window.localStorage.getItem("openstage:theme")
+          var theme = stored === "light" || stored === "dark"
+            ? stored
+            : (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+          var root = document.documentElement
+          root.dataset.theme = theme
+          root.style.colorScheme = theme
+          var meta = document.querySelector('meta[name="theme-color"]')
+          if (meta) meta.setAttribute("content", theme === "light" ? "#fafaf9" : "#09090b")
+        } catch (error) {
+          // Ignore storage errors and fall back to the default dark palette.
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
