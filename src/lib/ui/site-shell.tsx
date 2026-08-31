@@ -5,6 +5,7 @@ import type { Concert } from "@/domain/artists/concerts/api"
 import { Button } from "@/lib/ui/primitives/button"
 import { SearchDrawer } from "@/lib/ui/search-drawer"
 import { SuggestionDrawer } from "@/lib/ui/suggestion-drawer"
+import { ThemeToggle } from "@/lib/ui/theme-toggle"
 
 interface SiteShellProps {
   children: ReactNode
@@ -36,6 +37,7 @@ export function SiteShell({ children, onSelectConcert }: SiteShellProps) {
             <Wordmark />
           </a>
           <div className="flex items-center gap-1 sm:gap-2">
+            <ThemeToggle />
             <SearchDrawer onSelectConcert={onSelectConcert} />
             <SuggestionDrawer />
           </div>
@@ -51,6 +53,7 @@ export function SiteShell({ children, onSelectConcert }: SiteShellProps) {
             <p className="mt-3 max-w-md leading-6">A community-curated index of remarkable live recordings. Every performance links back to its original source.</p>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle variant="ghost" />
             <SuggestionDrawer variant="ghost" />
             <Button variant="ghost" size="icon" asChild>
               <a href="https://github.com/equiferus/openstage" target="_blank" rel="noreferrer" aria-label="Openstage on GitHub">
