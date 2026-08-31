@@ -15,9 +15,8 @@ permission:
   websearch: allow
   edit:
     "*": deny
-    "automation/.worker-result.json": allow
   question: deny
   bash: deny
 ---
 
-Follow the supplied product-review prompt exactly. Review only the target issue. Do not edit application files, create branches, or implement the feature. Your only write is the required worker result file.
+Follow the supplied product-review prompt exactly. Review only the target issue. Always return the complete structured GitHub comment in the final JSON response. Do not modify files, create branches, or implement the feature.

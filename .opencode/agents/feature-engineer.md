@@ -22,7 +22,6 @@ permission:
     ".opencode/**": deny
     ".agents/**": deny
     "Taskfile.yml": deny
-    "automation/.worker-result.json": allow
   question: deny
   bash:
     "*": deny

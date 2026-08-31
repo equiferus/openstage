@@ -8,24 +8,28 @@ Accept a concert only when it is genuinely live, a substantial or full performan
 
 Never invent dates, venues, song names, timestamps, recording URLs, or attribution. If metadata cannot be established confidently, do not guess.
 
+For YouTube submissions, run `bun automation/concert-source.ts <url>` once to obtain small, structured publisher metadata. Do not fetch YouTube watch-page HTML repeatedly and do not inspect OpenCode's internal tool-output files. Use web search and reliable independent sources for dates, venues, and setlists that the source metadata does not establish. Run allowed Git commands exactly as written, without pipes or shell redirections.
+
+Treat incomplete or inaccurate submitter metadata as a research lead, not an automatic rejection. If reliable sources establish the correct facts, use the corrected facts and explain them in the PR. Reject only when the recording itself is unsuitable, duplicate, fabricated, or materially irreconcilable. Use `needs-info` when a required fact remains uncertain after reasonable research.
+
 If accepted:
 
 1. Follow `github-issue-delivery` to fetch `main` and create `issue/<number>-<slug>` before editing.
 2. Add the concert using existing domain conventions, limiting changes to concert/artist data and genuinely necessary support code.
 3. Preserve ordering and formatting. Add setlists and timestamps only when verified.
 4. Run `bun run lint`, `bun run test`, and `bun run build`.
-5. Review the complete diff, commit, and push the issue branch. Do not create or merge the PR yourself.
+5. Review the complete diff, commit, and push the issue branch. The trusted supervisor creates the PR. Do not create or merge the PR yourself.
 
 If rejected, do not change code. Provide a concise reason in the result.
 
 If evidence may be recoverable, provide the specific missing-information request in the result.
 
-As your final action, write exactly one JSON object to `automation/.worker-result.json` using one of these schemas:
+As your final response, output exactly one raw JSON object with no Markdown fence, summary, or other text, using one of these schemas:
 
 - Accepted: `{ "issue": <number>, "outcome": "pr-opened", "branch": "issue/<number>-<slug>", "title": "...", "body": "... Closes #<number> ..." }`
 - Rejected: `{ "issue": <number>, "outcome": "rejected", "comment": "..." }`
 - Needs information: `{ "issue": <number>, "outcome": "needs-info", "comment": "..." }`
 
-The trusted worker will validate the file and perform GitHub API changes. Do not attempt to access credentials or mutate GitHub directly.
+The trusted worker will validate your final response and perform GitHub API changes. Do not attempt to access credentials or mutate GitHub directly.
 
 Never push directly to main, merge your own PR, or broaden scope beyond this concert.

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 
-import { CONFIGS, parseWorkerResult, selectIssue, type Role } from "./worker"
+import { collectAgentResponse, CONFIGS, parseAgentResponse, parseWorkerResult, selectIssue, type Role } from "./worker"
 import type { GitHubIssue } from "./github"
 
 function issue(number: number, labels: string[]): GitHubIssue {
@@ -52,6 +52,27 @@ describe("worker issue selection", () => {
     }, "feature", 42).outcome).toBe("pr-opened")
     expect(() => parseWorkerResult({ issue: 42, outcome: "approved", comment: "ok" }, "feature", 42)).toThrow()
     expect(() => parseWorkerResult({ issue: 41, outcome: "approved", comment: "ok" }, "pm", 42)).toThrow()
+  })
+
+  test("accepts a raw JSON final response and rejects surrounding prose", () => {
+    const response = JSON.stringify({
+      issue: 42,
+      outcome: "rejected",
+      comment: "The recording is unavailable.",
+    })
+    expect(parseAgentResponse(response, "concert", 42).outcome).toBe("rejected")
+    expect(() => parseAgentResponse(`Result: ${response}`, "concert", 42)).toThrow("exactly one raw JSON object")
+    expect(() => parseAgentResponse("{bad json}", "concert", 42)).toThrow("Agent returned invalid JSON")
+  })
+
+  test("extracts the final text from OpenCode JSON events", async () => {
+    const events = [
+      JSON.stringify({ type: "tool_use", part: { type: "tool", tool: "read", state: { status: "completed" } } }),
+      JSON.stringify({ type: "text", part: { type: "text", text: '{"issue":42,"outcome":"rejected","comment":"No."}' } }),
+    ].join("\n")
+    const stream = new Response(events).body
+    if (!stream) throw new Error("Expected a response body")
+    expect(await collectAgentResponse(stream)).toContain('"issue":42')
   })
 
   test.each([

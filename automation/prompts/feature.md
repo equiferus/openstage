@@ -10,11 +10,11 @@ Run `bun run lint`, `bun run test`, and `bun run build`. Then inspect the comple
 
 If implementation cannot safely meet the acceptance criteria, stop and prepare a concrete blocker comment.
 
-As your final action, write exactly one JSON object to `automation/.worker-result.json` using one schema:
+As your final response, output exactly one raw JSON object with no Markdown fence, summary, or other text, using one schema:
 
 - Implemented: `{ "issue": <number>, "outcome": "pr-opened", "branch": "issue/<number>-<slug>", "title": "...", "body": "... Closes #<number> ..." }`
 - Blocked: `{ "issue": <number>, "outcome": "blocked", "comment": "..." }`
 
-The trusted worker validates this file and performs GitHub API changes. Do not access credentials or mutate GitHub directly.
+The trusted worker validates your final response and performs GitHub API changes. Do not access credentials or mutate GitHub directly.
 
 Never push directly to main, merge your own PR, or change approved scope without returning the issue for review.
