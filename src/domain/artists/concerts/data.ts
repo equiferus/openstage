@@ -442,13 +442,13 @@ export const concerts: readonly Concert[] = [
     description:
       "A full ten-entry festival performance, including its intro, from the Dead to the World tour, captured at the Butzweilerhof grounds during the 1997 Bizarre Festival.",
     recordingNote:
-      "The WDR Rockpalast archive and independent event listings place this performance on August 16, 1997; the submitted July 21 date was corrected. The archive lists the song as Dried Up, Tied and Dead to the World.",
+      "The WDR Rockpalast archive and independent event listings place this performance on August 16, 1997; the submitted July 21 date was corrected.",
     setlist: [
       { title: "Intro", startAtSeconds: seconds("00:00") },
       { title: "Angel With the Scabbed Wings", startAtSeconds: seconds("02:40") },
       { title: "Get Your Gunn", startAtSeconds: seconds("05:56") },
       { title: "Cake and Sodomy", startAtSeconds: seconds("09:09") },
-      { title: "Dried Up, Tied Up and Dead to the World", startAtSeconds: seconds("13:04") },
+      { title: "Dried Up, Tied Up And Dead To The World", startAtSeconds: seconds("13:04") },
       { title: "Tourniquet", startAtSeconds: seconds("18:00") },
       { title: "Lunchbox", startAtSeconds: seconds("22:18") },
       { title: "Sweet Dreams (Are Made of This)", startAtSeconds: seconds("27:21") },
