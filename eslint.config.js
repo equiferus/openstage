@@ -11,7 +11,7 @@ export default tseslint.config(
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     languageOptions: {
       ecmaVersion: 2023,
-      globals: { ...globals.browser, ...globals.node },
+      globals: { ...globals.browser, ...globals.bunBuiltin },
     },
     plugins: {
       "react-hooks": reactHooks,

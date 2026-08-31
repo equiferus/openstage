@@ -19,21 +19,25 @@ Select **+ Suggest** on the [website](https://equiferus.github.io/openstage/) to
 
 Prefer to contribute the change yourself? Fork the repository, add the artist or concert to the appropriate `data.ts` file under `src/domain/artists`, run the checks below, and open a pull request.
 
+## 🤖 Suggestion automation
+
+The repository includes three permission-separated OpenCode workers for concert curation, product review, and approved feature implementation. See [automation/README.md](automation/README.md) for VM setup, GitHub token permissions, startup, logs, and recovery.
+
 ## 🛠️ Local development
 
-Requires Node.js 22.12+ and npm.
+Requires Bun 1.3+.
 
 ```sh
-npm install
-npm run dev
+bun install --frozen-lockfile
+bun run dev
 ```
 
 Before opening a PR:
 
 ```sh
-npm run lint
-npm test
-npm run build
+bun run lint
+bun run test
+bun run build
 ```
 
 ## 🧩 Built with

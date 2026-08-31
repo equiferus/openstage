@@ -1,5 +1,8 @@
 node_modules
 dist
+.env
+.worker-state
+automation/.worker-result.json
 .DS_Store
 *.local
 *.log
