@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Issue Delivery"
+  short_description: "Deliver GitHub issues through branches and closing pull requests"
+  default_prompt: "Handle this GitHub issue through a branch, validated pull request, merge, and closure verification."
