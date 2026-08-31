@@ -99,6 +99,7 @@ function validateProductReview(commentBody: string, outcome: string) {
     "### Decision",
     "### User problem",
     "### Assessment",
+    "### Static architecture",
     "### Implementation scope",
     "### Risks",
   ]
@@ -112,6 +113,12 @@ function validateProductReview(commentBody: string, outcome: string) {
       : "NEEDS HUMAN REVIEW"
   if (!commentBody.includes(`### Decision\n${expectedDecision}`)) {
     throw new Error(`PM response must state decision ${expectedDecision}`)
+  }
+  const staticOnly = commentBody.includes("### Static architecture\nSTATIC-ONLY: YES")
+  const requiresServer = commentBody.includes("### Static architecture\nSTATIC-ONLY: NO")
+  if (!staticOnly && !requiresServer) throw new Error("PM response must state STATIC-ONLY: YES or STATIC-ONLY: NO")
+  if (requiresServer && outcome !== "rejected") {
+    throw new Error("A non-static feature must be rejected")
   }
 }
 

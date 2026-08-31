@@ -7,7 +7,7 @@ function issue(number: number, labels: string[]): GitHubIssue {
   return { number, title: `Issue ${number}`, body: null, html_url: `https://example.test/${number}`, labels }
 }
 
-function productReview(decision: string) {
+function productReview(decision: string, staticOnly = "YES") {
   return `## Product review
 
 ### Decision
@@ -18,6 +18,9 @@ Problem.
 
 ### Assessment
 Assessment.
+
+### Static architecture
+STATIC-ONLY: ${staticOnly}
 
 ### Implementation scope
 Scope.
@@ -67,5 +70,23 @@ describe("worker issue selection", () => {
       outcome: "approved",
       comment: productReview("REJECT"),
     }, "pm", 42)).toThrow("PM response must state decision APPROVE")
+  })
+
+  test("allows only rejected outcomes for non-static features", () => {
+    expect(parseWorkerResult({
+      issue: 42,
+      outcome: "rejected",
+      comment: productReview("REJECT", "NO"),
+    }, "pm", 42).outcome).toBe("rejected")
+    expect(() => parseWorkerResult({
+      issue: 42,
+      outcome: "approved",
+      comment: productReview("APPROVE", "NO"),
+    }, "pm", 42)).toThrow("A non-static feature must be rejected")
+    expect(() => parseWorkerResult({
+      issue: 42,
+      outcome: "needs-human-review",
+      comment: productReview("NEEDS HUMAN REVIEW", "NO"),
+    }, "pm", 42)).toThrow("A non-static feature must be rejected")
   })
 })
