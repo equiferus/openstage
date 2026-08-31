@@ -72,7 +72,11 @@ type OpenCodeEvent = {
     type?: unknown
     text?: unknown
     tool?: unknown
-    state?: { status?: unknown }
+    state?: {
+      status?: unknown
+      error?: unknown
+      input?: { command?: unknown }
+    }
   }
 }
 
@@ -163,15 +167,55 @@ export function parseWorkerResult(value: unknown, role: Role, issueNumber: numbe
 
 export function parseAgentResponse(response: string, role: Role, issueNumber: number) {
   const trimmed = response.trim()
-  if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
-    throw new Error("Agent final response must be exactly one raw JSON object")
+  let directSyntaxError: SyntaxError | undefined
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    try {
+      return parseWorkerResult(JSON.parse(trimmed), role, issueNumber)
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw error
+      directSyntaxError = error
+    }
   }
-  try {
-    return parseWorkerResult(JSON.parse(trimmed), role, issueNumber)
-  } catch (error) {
-    if (error instanceof SyntaxError) throw new Error(`Agent returned invalid JSON: ${error.message}`, { cause: error })
-    throw error
+
+  const candidates: WorkerResult[] = []
+  let start = -1
+  let depth = 0
+  let inString = false
+  let escaped = false
+  for (let index = 0; index < response.length; index += 1) {
+    const character = response[index]
+    if (inString) {
+      if (escaped) escaped = false
+      else if (character === "\\") escaped = true
+      else if (character === '"') inString = false
+      continue
+    }
+    if (character === '"' && depth > 0) {
+      inString = true
+      continue
+    }
+    if (character === "{") {
+      if (depth === 0) start = index
+      depth += 1
+      continue
+    }
+    if (character !== "}" || depth === 0) continue
+    depth -= 1
+    if (depth !== 0 || start < 0) continue
+    try {
+      candidates.push(parseWorkerResult(JSON.parse(response.slice(start, index + 1)), role, issueNumber))
+    } catch {
+      // Ignore prose braces and JSON objects that do not match the trusted schema.
+    }
+    start = -1
   }
+
+  if (candidates.length === 1) return candidates[0]
+  if (candidates.length > 1) throw new Error("Agent response contained multiple valid worker-result JSON objects")
+  if (directSyntaxError) {
+    throw new Error(`Agent returned invalid JSON: ${directSyntaxError.message}`, { cause: directSyntaxError })
+  }
+  throw new Error("Agent response did not contain one valid worker-result JSON object")
 }
 
 export async function collectAgentResponse(stream: ReadableStream<Uint8Array>) {
@@ -194,7 +238,10 @@ export async function collectAgentResponse(stream: ReadableStream<Uint8Array>) {
       return
     }
     if (event.type === "tool_use" && typeof event.part?.tool === "string") {
-      console.log(`[opencode] ${event.part.tool}: ${String(event.part.state?.status ?? "finished")}`)
+      const status = String(event.part.state?.status ?? "finished")
+      const command = typeof event.part.state?.input?.command === "string" ? ` (${event.part.state.input.command})` : ""
+      const error = typeof event.part.state?.error === "string" ? `: ${event.part.state.error.slice(0, 240)}` : ""
+      console.log(`[opencode] ${event.part.tool}: ${status}${command}${error}`)
     }
   }
 

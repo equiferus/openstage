@@ -54,15 +54,16 @@ describe("worker issue selection", () => {
     expect(() => parseWorkerResult({ issue: 41, outcome: "approved", comment: "ok" }, "pm", 42)).toThrow()
   })
 
-  test("accepts a raw JSON final response and rejects surrounding prose", () => {
+  test("accepts raw JSON and one schema-valid JSON object in surrounding prose", () => {
     const response = JSON.stringify({
       issue: 42,
       outcome: "rejected",
       comment: "The recording is unavailable.",
     })
     expect(parseAgentResponse(response, "concert", 42).outcome).toBe("rejected")
-    expect(() => parseAgentResponse(`Result: ${response}`, "concert", 42)).toThrow("exactly one raw JSON object")
+    expect(parseAgentResponse(`Result: ${response}\nDone.`, "concert", 42).outcome).toBe("rejected")
     expect(() => parseAgentResponse("{bad json}", "concert", 42)).toThrow("Agent returned invalid JSON")
+    expect(() => parseAgentResponse(`${response}\n${response}`, "concert", 42)).toThrow("multiple valid")
   })
 
   test("extracts the final text from OpenCode JSON events", async () => {
