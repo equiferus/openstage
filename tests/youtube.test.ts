@@ -20,4 +20,17 @@ describe("YouTube utilities", () => {
     expect(getYouTubeUrlAtTime("https://youtu.be/abc?si=test", 75)).toContain("t=75")
     expect(getYouTubeThumbnailUrl("abc")).toBe("https://i.ytimg.com/vi/abc/hqdefault.jpg")
   })
+
+  it("builds controllable single-video loops", () => {
+    const url = getYouTubeEmbedUrl("abc", {
+      enableJsApi: true,
+      loop: true,
+      origin: "https://example.com",
+    })
+
+    expect(url).toContain("loop=1")
+    expect(url).toContain("playlist=abc")
+    expect(url).toContain("enablejsapi=1")
+    expect(url).toContain(`origin=${encodeURIComponent("https://example.com")}`)
+  })
 })

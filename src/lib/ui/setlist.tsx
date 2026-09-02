@@ -21,7 +21,7 @@ export function Setlist({ entries, onSelect }: SetlistProps) {
         <Badge>{entries.length} tracks</Badge>
       </div>
       {timedEntries > 0 ? (
-        <p className="mt-1.5 text-xs text-zinc-500">Select any timestamp to jump to that moment.</p>
+        <p className="mt-1.5 text-xs text-zinc-500">Select a timestamp to watch from that moment.</p>
       ) : null}
 
       <ol className="mt-4 divide-y divide-white/8 overflow-x-hidden rounded-xl border border-white/8 bg-black/20 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
@@ -34,10 +34,10 @@ export function Setlist({ entries, onSelect }: SetlistProps) {
                 <span className="block text-sm font-medium text-zinc-200">{entry.title}</span>
                 {entry.note ? <span className="mt-0.5 block text-xs text-zinc-600">{entry.note}</span> : null}
               </span>
-              {isPlayable ? (
+              {entry.startAtSeconds !== undefined ? (
                 <span className="flex shrink-0 items-center gap-1.5 font-mono text-xs text-amber-300">
                   <Play className="size-3 fill-current" aria-hidden="true" />
-                  {formatTimestamp(entry.startAtSeconds!)}
+                  {formatTimestamp(entry.startAtSeconds)}
                 </span>
               ) : null}
             </>

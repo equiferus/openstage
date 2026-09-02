@@ -1,39 +1,42 @@
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { ExternalLink, MapPin, VolumeX } from "lucide-react"
 
 import { getArtistById } from "@/domain/artists/api"
 import type { Concert, SetlistEntry } from "@/domain/artists/concerts/api"
 import { listConcertSuggestions, listOtherConcertsByArtistId } from "@/domain/artists/concerts/api"
-import { getYouTubeUrlAtTime } from "@/lib/youtube"
 import { Badge } from "@/lib/ui/primitives/badge"
 import { Button } from "@/lib/ui/primitives/button"
 import { ConcertCarousel } from "@/lib/ui/concert-carousel"
 import { ConcertMeta } from "@/lib/ui/concert-meta"
 import { Setlist } from "@/lib/ui/setlist"
-import { VideoPlayer } from "@/lib/ui/video-player"
+import { VideoPlayer, type VideoLiveSchedule, type VideoSeekRequest } from "@/lib/ui/video-player"
 
 interface HomePageProps {
   concert: Concert
+  goLiveRequest: number
+  liveSchedule?: VideoLiveSchedule
+  onLiveChange: (isLive: boolean) => void
   onSelectConcert: (concert: Concert) => void
 }
 
-function originalUrlAtTime(concert: Concert, startAtSeconds?: number): string {
-  return concert.source.platform === "youtube"
-    ? getYouTubeUrlAtTime(concert.source.originalUrl, startAtSeconds)
-    : concert.source.originalUrl
-}
-
-export function HomePage({ concert, onSelectConcert }: HomePageProps) {
+export function HomePage({ concert, goLiveRequest, liveSchedule, onLiveChange, onSelectConcert }: HomePageProps) {
   const artist = getArtistById(concert.artistId)
-  const [startAtSeconds, setStartAtSeconds] = useState<number | undefined>()
-  const playerRef = useRef<HTMLDivElement>(null)
+  const [seekRequest, setSeekRequest] = useState<VideoSeekRequest>()
   const recommendations = listConcertSuggestions(concert.artistId, 10)
   const moreFromArtist = listOtherConcertsByArtistId(concert.artistId, concert.id, 10)
   const hasSetlist = Boolean(concert.setlist?.length)
 
   function playSetlistEntry(entry: SetlistEntry) {
-    setStartAtSeconds(entry.startAtSeconds)
-    playerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+    if (entry.startAtSeconds === undefined) {
+      return
+    }
+
+    setSeekRequest((current) => ({
+      id: (current?.id ?? 0) + 1,
+      startAtSeconds: entry.startAtSeconds!,
+    }))
+    onLiveChange(false)
+    document.getElementById("concert-player")?.scrollIntoView({ behavior: "smooth", block: "center" })
   }
 
   return (
@@ -63,7 +66,6 @@ export function HomePage({ concert, onSelectConcert }: HomePageProps) {
         </div>
 
         <div
-          ref={playerRef}
           id="concert-player"
           className={`scroll-mt-24 rounded-[1.4rem] border border-white/10 bg-black/50 p-1.5 shadow-2xl shadow-black/40 sm:rounded-[2rem] sm:p-2 xl:row-start-2 ${
             hasSetlist ? "xl:col-start-2" : "xl:col-[1/3]"
@@ -72,9 +74,11 @@ export function HomePage({ concert, onSelectConcert }: HomePageProps) {
           <VideoPlayer
             source={concert.source}
             title={concert.title}
-            startAtSeconds={startAtSeconds}
-            autoplay
-            muted
+            durationSeconds={concert.durationSeconds}
+            goLiveRequest={goLiveRequest}
+            liveSchedule={liveSchedule}
+            seekRequest={seekRequest}
+            onLiveChange={onLiveChange}
           />
         </div>
 
@@ -97,7 +101,7 @@ export function HomePage({ concert, onSelectConcert }: HomePageProps) {
           <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <p className="max-w-2xl text-sm leading-6 text-zinc-500">{concert.description}</p>
             <Button variant="outline" asChild className="shrink-0">
-              <a href={originalUrlAtTime(concert, startAtSeconds)} target="_blank" rel="noreferrer">
+              <a href={concert.source.originalUrl} target="_blank" rel="noreferrer">
                 Watch original <ExternalLink />
               </a>
             </Button>

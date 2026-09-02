@@ -1,20 +1,34 @@
-import { fireEvent, render, screen, within } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { synchronizedClock } from "@/lib/synchronized-playback"
 import { Routes } from "@/routes/routes"
 
 describe("Openstage single-page catalog", () => {
+  beforeEach(() => {
+    vi.spyOn(synchronizedClock, "nowMs").mockReturnValue(0)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it("renders the featured concert with ordered recommendation rails", () => {
     window.location.hash = "#/"
     render(<Routes />)
 
     expect(screen.getByRole("heading", { name: "The Monolith at AlUla", level: 1 })).toBeInTheDocument()
-    const player = screen.getByTitle("The Monolith at AlUla video player")
-    expect(player).toHaveAttribute("src", expect.stringContaining("autoplay=1"))
-    expect(player).toHaveAttribute("src", expect.stringContaining("mute=1"))
+    expect(screen.getByRole("group", { name: "The Monolith at AlUla video player" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Setlist", level: 2 })).toBeVisible()
-    expect(screen.getByRole("button", { name: "Play Intro at 00:00" })).toBeVisible()
+    expect(screen.getByText("Select a timestamp to watch from that moment.")).toBeVisible()
+    const intro = screen.getByRole("button", { name: "Play Intro at 00:00" })
+    expect(intro).toBeVisible()
+
+    fireEvent.click(intro)
+    expect(screen.getByRole("status")).toHaveTextContent("Not live")
+    fireEvent.click(screen.getByRole("button", { name: "Go live" }))
+    expect(screen.queryByRole("status")).not.toBeInTheDocument()
 
     const recommendations = screen.getByRole("heading", { name: "Recommended concerts" }).closest("section")
     expect(recommendations).not.toBeNull()
@@ -38,9 +52,32 @@ describe("Openstage single-page catalog", () => {
     await user.click(screen.getByRole("button", { name: "Play Live in Concert — The Ultimate Experience by Hans Zimmer" }))
 
     expect(screen.getByRole("heading", { name: "Live in Concert — The Ultimate Experience", level: 1 })).toBeInTheDocument()
-    expect(screen.getByTitle("Live in Concert — The Ultimate Experience video player")).toBeInTheDocument()
+    expect(screen.getByRole("group", { name: "Live in Concert — The Ultimate Experience video player" })).toBeInTheDocument()
     expect(window.location.hash).toBe("#/?concert=hans-zimmer-diamond-in-the-desert-compilation")
+    expect(screen.getByRole("status")).toHaveTextContent("Not live")
     expect(screen.queryByRole("heading", { name: "More from Hans Zimmer" })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Go live" }))
+    expect(screen.getByRole("heading", { name: "The Monolith at AlUla", level: 1 })).toBeInTheDocument()
+    expect(window.location.hash).toBe("#/")
+    expect(screen.queryByRole("status")).not.toBeInTheDocument()
+  })
+
+  it("advances the live channel to the next concert at a recording boundary", async () => {
+    let nowMs = 0
+    vi.mocked(synchronizedClock.nowMs).mockImplementation(() => nowMs)
+    window.location.hash = "#/"
+    render(<Routes />)
+
+    expect(screen.getByRole("heading", { name: "The Monolith at AlUla", level: 1 })).toBeInTheDocument()
+
+    nowMs = 3_353_000
+    await waitFor(
+      () => expect(screen.getByRole("heading", { name: "NYE Livestream from Louvre Abu Dhabi", level: 1 })).toBeInTheDocument(),
+      { timeout: 2_000 },
+    )
+    expect(window.location.hash).toBe("#/")
+    expect(screen.queryByRole("status")).not.toBeInTheDocument()
   })
 
   it("searches and filters artists and concerts with the drawer table", async () => {

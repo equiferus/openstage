@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { Code2, Play } from "lucide-react"
+import { Code2, Play, Radio } from "lucide-react"
 
 import type { Concert } from "@/domain/artists/concerts/api"
 import { Button } from "@/lib/ui/primitives/button"
@@ -9,6 +9,8 @@ import { ThemeToggle } from "@/lib/ui/theme-toggle"
 
 interface SiteShellProps {
   children: ReactNode
+  isLive: boolean
+  onGoLive: () => void
   onSelectConcert: (concert: Concert) => void
 }
 
@@ -23,7 +25,7 @@ export function Wordmark() {
   )
 }
 
-export function SiteShell({ children, onSelectConcert }: SiteShellProps) {
+export function SiteShell({ children, isLive, onGoLive, onSelectConcert }: SiteShellProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 border-b border-white/8 bg-zinc-950/80 backdrop-blur-xl">
@@ -42,6 +44,22 @@ export function SiteShell({ children, onSelectConcert }: SiteShellProps) {
             <SuggestionDrawer />
           </div>
         </div>
+        {!isLive ? (
+          <div
+            className="flex min-h-10 items-center justify-center gap-3 border-t border-amber-300/15 bg-amber-400/[0.06] px-4 py-1.5 text-xs font-semibold text-amber-200"
+            role="status"
+            aria-live="polite"
+          >
+            <span className="inline-flex items-center gap-2">
+              <span className="size-2 rounded-full bg-zinc-500" aria-hidden="true" />
+              Not live
+            </span>
+            <Button type="button" size="sm" onClick={onGoLive}>
+              <Radio aria-hidden="true" />
+              Go live
+            </Button>
+          </div>
+        ) : null}
       </header>
 
       <main className="flex-1">{children}</main>

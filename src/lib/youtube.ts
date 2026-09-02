@@ -1,12 +1,22 @@
 export interface YouTubeEmbedOptions {
   autoplay?: boolean
+  enableJsApi?: boolean
+  loop?: boolean
   muted?: boolean
+  origin?: string
   startAtSeconds?: number
 }
 
 export function getYouTubeEmbedUrl(
   videoId: string,
-  { autoplay = false, muted = false, startAtSeconds }: YouTubeEmbedOptions = {},
+  {
+    autoplay = false,
+    enableJsApi = false,
+    loop = false,
+    muted = false,
+    origin,
+    startAtSeconds,
+  }: YouTubeEmbedOptions = {},
 ): string {
   const params = new URLSearchParams({
     autoplay: autoplay ? "1" : "0",
@@ -17,6 +27,18 @@ export function getYouTubeEmbedUrl(
 
   if (muted) {
     params.set("mute", "1")
+  }
+
+  if (loop) {
+    params.set("loop", "1")
+    params.set("playlist", videoId)
+  }
+
+  if (enableJsApi) {
+    params.set("enablejsapi", "1")
+    if (origin) {
+      params.set("origin", origin)
+    }
   }
 
   if (startAtSeconds !== undefined && startAtSeconds > 0) {
